@@ -1,0 +1,41 @@
+/* Two picture-led shelves: a haircut first, then arrangements of that haircut. */
+.hair-shelf .hair-base-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px;min-height:0;min-width:0;flex:1;width:100%}
+.hair-base{min-height:0!important;position:relative;padding:4px 4px 22px!important;overflow:hidden}
+.hair-base .choice-art{width:100%;height:100%;max-height:none!important}
+.hair-base-name{position:absolute;bottom:6px;left:5px;right:5px;font-size:10px;font-weight:700;text-align:center;color:#754d48;line-height:1.2}
+.hair-base-go{position:absolute;right:5px;bottom:20px;width:25px;height:25px;padding:5px;background:#f0d0c5;border-radius:50%}
+.hair-context{display:flex;align-items:center;gap:12px;flex-shrink:0;width:100%;min-width:0;min-height:64px}
+.hair-base-back{display:grid;grid-template-columns:23px 46px;grid-template-rows:50px;align-items:center;min-width:84px;min-height:64px;gap:2px;background:#f0dfd2;border:2px solid #d7b2a6;border-radius:21px;padding:4px;color:#91556a;position:relative}
+.hair-back-arrow{display:flex;width:24px;height:32px}.hair-back-preview{display:block;height:52px;width:46px}.hair-back-preview svg{width:100%;height:100%}.hair-back-label{display:none}
+.hair-stage-title{font-size:12px;color:#80584e;font-weight:700;min-width:0}.hair-stage-title small{display:block;margin-top:4px;font-size:10px;font-weight:400}
+.hair-arranging .hair-browser{position:relative;grid-template-rows:minmax(0,1fr);padding-bottom:13px;min-width:0;min-height:0}
+.hair-arranging .hair-page-mark{position:absolute;bottom:0;left:70px;right:70px;min-height:8px}
+.hair-arranging .hair-cards{min-width:0;min-height:0;grid-auto-rows:minmax(0,1fr)}
+.hair-arranging .hair-cards .choice{min-height:0!important}.hair-arranging .hair-cards .choice-art{max-height:none!important}
+.hair-loose-badge{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);font-size:9px;color:#80584e;white-space:nowrap;background:#fff8eddb;padding:3px 8px;border-radius:12px}
+@media(orientation:landscape){
+  .hair-arranging .hair-cards{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}
+  .hair-shelf .hair-palette .colors{grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;width:100%}
+  .hair-shelf .hair-palette .color{width:100%;height:44px;min-height:44px;min-width:0;border-width:4px}
+  .hair-shelf .hair-palette .color svg{width:19px;height:19px}
+  .hair-arranging .hair-page{width:52px;padding:12px}.hair-arranging .hair-browser{grid-template-columns:52px minmax(0,1fr) 52px;gap:7px}
+  .hair-arranging .hair-page-mark{left:58px;right:58px}.hair-loose-badge{bottom:2px;font-size:8px;padding:2px 7px}
+}
+@media(orientation:portrait){
+  .hair-shelf .hair-base-cards{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:10px}
+  .hair-base-name{font-size:10px;bottom:6px}.hair-base{padding-bottom:22px!important}
+  .hair-shelf.hair-arranging{display:grid!important;grid-template-columns:64px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 52px;gap:7px 10px}
+  .hair-arranging .hair-context{width:64px;height:100%;min-height:0;align-items:stretch}
+  .hair-arranging .hair-base-back{width:64px;min-width:64px;min-height:64px;height:100%;display:flex;flex-direction:column;justify-content:center;gap:4px;border-radius:19px;padding:5px}
+  .hair-arranging .hair-back-arrow{width:28px;height:28px}.hair-arranging .hair-back-preview{height:58px;width:50px}.hair-arranging .hair-back-label{display:block;font-size:8px}
+  .hair-stage-title{display:none}.hair-arranging .hair-browser{grid-template-columns:52px minmax(0,1fr) 52px;gap:7px;width:100%;padding-bottom:12px}
+  .hair-arranging .hair-page{width:52px;padding:12px;min-height:64px;border-radius:20px}
+  .hair-arranging .hair-palette{grid-column:1/-1}.hair-arranging .hair-page-mark{left:58px;right:58px}
+}
+@media(max-height:700px) and (orientation:landscape){.hair-context{min-height:54px}.hair-base-back{min-height:54px;grid-template-rows:40px}.hair-back-preview{height:42px}.hair-shelf .hair-base-cards{gap:7px}.hair-stage-title{font-size:10px}}
+@media(max-width:600px) and (orientation:portrait){
+  .hair-shelf .hair-base-cards{gap:5px}.hair-base-name{font-size:8px}.hair-base-go{width:20px;height:20px;padding:4px}
+  .hair-shelf.hair-arranging{grid-template-columns:48px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 32px;gap:6px}
+  .hair-arranging .hair-context,.hair-arranging .hair-base-back{width:48px;min-width:48px}.hair-arranging .hair-back-preview{width:39px;height:48px}.hair-arranging .hair-back-label{font-size:7px}
+  .hair-arranging .hair-browser{grid-template-columns:40px minmax(0,1fr) 40px;gap:4px}.hair-arranging .hair-page{width:40px;padding:9px}.hair-arranging .hair-page-mark{left:44px;right:44px}.hair-loose-badge{font-size:7px;padding:2px 4px}
+}

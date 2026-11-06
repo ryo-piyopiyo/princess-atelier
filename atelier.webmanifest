@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "おひめさまの アトリエ",
+  "short_name": "アトリエ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6eae1",
+  "theme_color": "#f6e9df",
+  "icons": [
+    {
+      "src": "atelier-icon.png",
+      "type": "image/png",
+      "sizes": "176x176"
+    }
+  ]
+}
