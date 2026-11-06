@@ -62,10 +62,11 @@
     nativeBackend();audio.src=source;
   }
   function startBuffer(){
-    if(!buffer||bufferNode||!wanted())return;resumeContext();setLevel(0);const node=context.createBufferSource(),version=sourceVersion;
-    node.buffer=buffer;node.loop=true;node.connect(gain);bufferNode=node;bufferStartedAt=context.currentTime;playing=true;playAttempts++;
-    node.onended=()=>{if(bufferNode===node){bufferNode=null;playing=false;if(version===sourceVersion&&wanted())blocked=true;}};
-    try{node.start(0,offset%buffer.duration);setLevel(activeVoice?levels.ducked:levels.normal,levels.fadeInMs);}catch{bufferNode=null;playing=false;blocked=true;try{node.disconnect();}catch{}}
+    if(!buffer||bufferNode||!wanted())return;resumeContext();setLevel(0);let node;const version=sourceVersion;
+    try{node=context.createBufferSource();node.buffer=buffer;node.loop=true;node.connect(gain);bufferNode=node;bufferStartedAt=context.currentTime;playing=true;playAttempts++;
+      node.onended=()=>{if(bufferNode===node){bufferNode=null;playing=false;if(version===sourceVersion&&wanted())blocked=true;}};
+      node.start(0,offset%buffer.duration);setLevel(activeVoice?levels.ducked:levels.normal,levels.fadeInMs);
+    }catch{bufferNode=null;playing=false;blocked=true;try{node?.disconnect();}catch{}}
   }
   function startNative(){
     if(pending||!wanted())return;if(!audio.paused&&playing){resumeContext();level(levels.releaseMs);return;}
