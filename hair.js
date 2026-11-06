@@ -215,7 +215,23 @@
     return asset;
   }
 
-  function tintDefinition(value,id) {
+  // Bounds of the cream fabric ties, normalized to each original watercolor.
+  // Floral pins, pearl chains and styles without a fabric bow are excluded.
+  const ribbonAreas={
+    braid:[[0,.79,.31,.17],[.69,.79,.31,.17]],
+    'double-bun':[[.02,.185,.235,.28],[.69,.185,.27,.28]],
+    'half-up':[[.315,.063,.39,.23]],
+    'low-pony':[[0,.385,.35,.23],[0,.605,.105,.145]],
+    'single-braid':[[.48,.77,.38,.19]],
+    'bob-half-up':[[.82,.19,.145,.22]],
+    'straight-braid':[[.16,.772,.15,.075],[.70,.772,.16,.075]],
+    'straight-half-up':[[.75,.145,.165,.14]],
+    'straight-ponytail':[[.60,.053,.23,.116]],
+    'straight-twins':[[.135,.419,.15,.068],[.70,.419,.15,.068]],
+    twintails:[[.21,.005,.19,.212],[.59,.005,.23,.212]]
+  };
+  const hasRibbon=id=>Object.prototype.hasOwnProperty.call(ribbonAreas,id);
+  function hairTintSteps(value) {
     const base=color(value).toLowerCase();
     if(base==='#865947')return '';
     // Map source luminance through a multi-stop color curve, retaining every fine strand.
@@ -223,20 +239,40 @@
       ? ['#111017','#1c1a25','#302d3b','#494555','#676171','#87818d','#b5acb1','#d8cdd0','#fff9ef']
       : [mix(base,'#221d28',.86),mix(base,'#30232f',.70),mix(base,'#30232f',.45),mix(base,'#30232f',.16),base,mix(base,'#fff5e5',.28),mix(base,'#fff5e5',.52),mix(base,'#fff8ed',.78),'#fff9ef'];
     const table=channel=>curve.map(c=>(parseInt(c.slice(channel,channel+2),16)/255).toFixed(5)).join(' ');
-    return `<filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-      <feColorMatrix in="SourceGraphic" type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0" result="hair-luminance"/>
+    return `<feColorMatrix in="SourceGraphic" type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0" result="hair-luminance"/>
       <feComponentTransfer in="hair-luminance" result="hair-tinted"><feFuncR type="table" tableValues="${table(1)}"/><feFuncG type="table" tableValues="${table(3)}"/><feFuncB type="table" tableValues="${table(5)}"/><feFuncA type="identity"/></feComponentTransfer>
       <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .2126 .7152 .0722 0 0" result="ornament-luminance"/>
       <feComponentTransfer in="ornament-luminance" result="ornament-mask"><feFuncA type="table" tableValues="0 0 0 0 0 0 0 0 0 0 0 0 0.03 0.60 0.97 1 1"/></feComponentTransfer>
       <feComposite in="hair-tinted" in2="ornament-mask" operator="out" result="dyed-hair"/>
       <feComposite in="SourceGraphic" in2="ornament-mask" operator="in" result="original-ornaments"/>
-      <feComposite in="dyed-hair" in2="original-ornaments" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
-    </filter>`;
+      <feComposite in="dyed-hair" in2="original-ornaments" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="styled-hair"/>`;
   }
 
-  function paintedLayer(id,value,part,asset) {
+  function ribbonTintSteps(asset,areas,ribbonColor,baseImage) {
+    if(!areas||!/^#[\da-f]{6}$/i.test(ribbonColor||''))return '';
+    const zones=areas.map(([x,y,w,h],i)=>`<feFlood x="${asset.x+x*asset.w}" y="${asset.y+y*asset.h}" width="${w*asset.w}" height="${h*asset.h}" flood-color="white" result="tie-${i}"/>`).join('');
+    const channels=['R','G','B'].map((letter,i)=>{
+      const m=.10+.80*parseInt(ribbonColor.slice(1+i*2,3+i*2),16)/255;
+      const stops=Array.from({length:17},(_,j)=>{
+        const y=j/16;
+        return (y<.82?m*(.035+.965*(y/.82)**1.28):m+(1-m)*((y-.82)/.18)**1.25).toFixed(4);
+      }).join(' ');
+      return `<feFunc${letter} type="table" tableValues="${stops}"/>`;
+    }).join('');
+    return `${zones}<feMerge result="tie-zones">${areas.map((_,i)=>`<feMergeNode in="tie-${i}"/>`).join('')}</feMerge>
+      <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 2.5 0 -4.44" result="ivory"/>
+      <feComposite in="ivory" in2="tie-zones" operator="in" result="tie-mask"/>
+      <feColorMatrix in="SourceGraphic" type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0" result="tie-value"/>
+      <feComponentTransfer in="tie-value" result="tie-color">${channels}<feFuncA type="identity"/></feComponentTransfer>
+      <feComposite in="tie-color" in2="tie-mask" operator="in" result="only-ties"/>
+      <feComposite in="${baseImage}" in2="tie-mask" operator="out" result="rest-of-wig"/>
+      <feComposite in="only-ties" in2="rest-of-wig" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>`;
+  }
+  function paintedLayer(id,value,part,asset,ribbonColor) {
     const prefix=`princess-painted-hair-${++serial}`,filterId=prefix+'-tint',clipId=prefix+'-face',rangeId=prefix+'-range';
-    const tint=tintDefinition(value,filterId),front=part==='front';
+    const hair=hairTintSteps(value),ties=ribbonTintSteps(asset,ribbonAreas[id],ribbonColor,hair?'styled-hair':'SourceGraphic');
+    const tint=(hair||ties)?`<filter id="${filterId}" x="0" y="0" width="100%" height="100%" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">${hair}${ties}</filter>`:'';
+    const front=part==='front';
     // The wig is partitioned once: fringe/cheek strands and hanging locks sit
     // in front, while the upper outer cap stays behind the face. A low split
     // above the shoulders keeps long hair and braids from disappearing in clothes.
@@ -250,16 +286,16 @@
     return `<g class="princess-hair painted-hair painted-hair-${part}" data-hair-style="${id}" data-hair-art="painted" aria-hidden="true"><defs>${tint}${clip}</defs><g clip-path="url(#${clipId})">${front?image:`<g clip-path="url(#${rangeId})">${image}</g>`}</g></g>`;
   }
 
-  function back(id,value) {
+  function back(id,value,ribbonColor=null) {
     const style=known.has(id)?id:'long',asset=paintedAsset(style);
-    return asset?paintedLayer(style,value,'back',asset):svgBack(variants[style]?.fallback||style,value);
+    return asset?paintedLayer(style,value,'back',asset,ribbonColor):svgBack(variants[style]?.fallback||style,value);
   }
-  function front(id,value) {
+  function front(id,value,ribbonColor=null) {
     const style=known.has(id)?id:'long',asset=paintedAsset(style);
-    return asset?paintedLayer(style,value,'front',asset):svgFront(variants[style]?.fallback||style,value);
+    return asset?paintedLayer(style,value,'front',asset,ribbonColor):svgFront(variants[style]?.fallback||style,value);
   }
 
   const frozenFamilies=Object.freeze(families.map(item=>Object.freeze({...item,styles:Object.freeze(item.styles)})));
   const familyFor=id=>frozenFamilies.find(item=>item.styles.includes(id))||frozenFamilies[0];
-  window.PrincessHair=Object.freeze({cards:Object.freeze(cards.map(Object.freeze)),colors:Object.freeze(colors),families:frozenFamilies,familyFor,back,front});
+  window.PrincessHair=Object.freeze({cards:Object.freeze(cards.map(Object.freeze)),colors:Object.freeze(colors),families:frozenFamilies,familyFor,hasRibbon,back,front});
 })();

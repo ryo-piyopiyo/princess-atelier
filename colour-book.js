@@ -52,7 +52,8 @@
   }
   function close(){
     if(!session)return;
-    const {root,options,owner,ownerScope}=session;session=null;root.remove();
+    const {root,options,owner,ownerScope,covered}=session;session=null;root.remove();
+    for(const [el,old] of covered){el.inert=false;if(old===null)el.removeAttribute('aria-hidden');else el.setAttribute('aria-hidden',old);}
     options.onClose?.();
     if(owner?.isConnected){owner.focus({preventScroll:true});return;}
     if(!owner||!ownerScope?.isConnected)return;
@@ -78,19 +79,22 @@
     if(!groups.length)return;
     const owner=document.activeElement,root=document.createElement('div');
     const current=hex(options.current()),index=nearestGroup(groups,current);
-    session={options,groups,group:Math.max(0,index),root,owner,ownerScope:owner?.closest('[role="dialog"]')||document.body};
+    const covered=[document.getElementById('app'),document.getElementById('modalBackdrop')].filter(el=>el&&!el.inert).map(el=>[el,el.getAttribute('aria-hidden')]);
+    for(const [el] of covered)el.inert=true;
+    session={options,groups,group:Math.max(0,index),root,owner,covered,ownerScope:owner?.closest('[role="dialog"]')||document.body};
     root.className='modal-backdrop colour-book-layer';
     root.innerHTML='<section class="modal colour-modal colour-book" role="dialog" aria-modal="true" aria-labelledby="colourBookTitle">'
       +'<button class="modal-close" data-colour-close aria-label="とじる">'+settings.icon('close')+'</button>'
       +'<h2 id="colourBookTitle">'+escape(options.title||'いろを えらぼう')+'</h2>'
       +'<div class="colour-workbench"><div class="colour-preview-column"><div id="colourGarmentPreview" class="colour-garment-preview"></div><div id="colourName" class="colour-name" aria-live="polite"></div></div>'
       +'<div class="colour-picker-column"><nav id="colourGroups" class="colour-groups" aria-label="いろの なかま"></nav><div id="colourChoices" class="colour-choices" aria-label="いろの みほん"></div>'
-      +'<label class="colour-custom"><input type="color" data-colour-rgb aria-label="じぶんの いろ"><span>じぶんの いろ</span></label></div></div>'
+      +'<label class="colour-custom"><input type="color" data-colour-rgb aria-label="じぶんの いろ"><span>じぶんの いろ</span></label>'+ (options.onReset?'<button class="item-original" data-colour-original>↶ もとの いろ</button>':'')+'</div></div>'
       +'<div class="modal-actions"><button class="action-button" data-colour-done>'+settings.icon('check')+'<span>これに する</span></button></div></section>';
     document.body.append(root);render();
     root.addEventListener('change',e=>{if(e.target.matches('[data-colour-rgb]'))pick(e.target.value);});
     root.addEventListener('click',e=>{
       if(e.target===root||e.target.closest('[data-colour-close],[data-colour-done]')){close();return;}
+      if(e.target.closest('[data-colour-original]')){options.onReset?.();render();return;}
       const family=e.target.closest('[data-colour-group]'),sample=e.target.closest('[data-colour-choice]');
       if(!family&&!sample)return;
       const button=family||sample,focused=document.activeElement===button;
@@ -102,6 +106,7 @@
       }
     });
     root.querySelector('[data-colour-close]').focus({preventScroll:true});
+    for(const [el] of covered)el.setAttribute('aria-hidden','true');
     settings.speak('chooseColor','いろを えらんでね');
   }
   document.addEventListener('keydown',handleKey,true);

@@ -11,7 +11,7 @@
   let keepsakeSaveInFlight = false;
   const CASUAL_PARTS=[{id:'top',label:'トップス'},{id:'outer',label:'うわぎ'},{id:'bottom',label:'ボトムス'},{id:'socks',label:'くつした'},{id:'shoes',label:'くつ'}];
   const CASUAL_FALLBACK={top:'tee',outer:'none',bottom:'skirt',socks:'ankle',shoes:'sneakers',accessory:'none',background:'room',styles:{top:{color:'#dc9fb4',pattern:'plain',ribbon:false},outer:{color:'#a4c4b7',pattern:'plain',ribbon:false},bottom:{color:'#91abc8',pattern:'plain',ribbon:false},socks:{color:'#fff1df',pattern:'plain',ribbon:false},shoes:{color:'#cc9b80',pattern:'plain',ribbon:false}}};
-  const DEFAULT = {mode:'princess',casual:CASUAL_FALLBACK,dress:'ball',dressColor:'#ec9695',hair:'long',hairColor:'#865947',face:'gentle',friendId:'cast-gentle',faceStudioEnabled:false,faceOptions:{enabled:false},accessory:'crown',shoes:'ballet',background:'garden',makeup:{blush:null,lip:null},nails:{hands:Array(10).fill(null),feet:Array(10).fill(null)},stickers:[],unlocked:false,sound:true,bgm:true};
+  const DEFAULT = {mode:'princess',casual:CASUAL_FALLBACK,dress:'ball',dressColor:'#ec9695',hair:'long',hairColor:'#865947',face:'gentle',friendId:'cast-gentle',faceStudioEnabled:false,faceOptions:{enabled:false},accessory:'crown',shoes:'ballet',shoeColor:null,accessoryColor:null,dressAccentColor:null,hairRibbonColor:null,necklace:'none',ring:'none',bracelet:'none',necklaceColor:null,ringColor:null,braceletColor:null,necklaceMetalColor:null,ringMetalColor:null,braceletMetalColor:null,stickerColors:{},background:'garden',makeup:{blush:null,lip:null},nails:{hands:Array(10).fill(null),feet:Array(10).fill(null)},stickers:[],unlocked:false,sound:true,bgm:true};
   const POLISHES = ['#e99aa9','#c48ec1','#b8b3e0','#82b5df','#83c9c1','#e8bd72','#dc7778','#f6eee1'];
   const BLUSHES = ['#eb91a3','#eaa481','#dca0ba'];
   const LIPS = ['#d87d94','#c85f7f','#e39a83'];
@@ -41,7 +41,7 @@
   function speakCasualShelf(part){const key=CASUAL_SHELF_VOICES[part];if(key)speak(key);}
   function speakCasualItem(part,id){const key=CASUAL_ITEM_VOICES[part]?.[id];if(key)speak(key);else speakCasualShelf(part);}
   function speakCasualStyle(kind,value){const key=kind==='ribbon'?(value==='on'?'casualRibbonOn':'noRibbon'):CASUAL_PATTERN_VOICES[value];if(key)speak(key);}
-  const CATEGORIES = [{id:'dress',label:'ドレス'},{id:'shoes',label:'くつ'},{id:'hair',label:'かみのけ'},{id:'accessory',label:'ヘアアクセサリー'},{id:'background',label:'おでかけ'},{id:'makeup',label:'おけしょう'},{id:'stickers',label:'シール'}];
+  const CATEGORIES = [{id:'dress',label:'ドレス'},{id:'shoes',label:'くつ'},{id:'hair',label:'かみのけ'},{id:'accessory',label:'アクセサリー'},{id:'background',label:'おでかけ'},{id:'makeup',label:'おけしょう'},{id:'stickers',label:'シール'}];
   const TITLES = {dress:'どれに する？',hair:'かみがたを えらぼう',accessory:'きらり、かざろう',shoes:'どの くつを はこう？',background:'どこにお出かけしようかな？',makeup:'おけしょうの じかん',stickers:'ぺたん、と かざろう'};
   const STICKERS = [{id:'flower',label:'おはな'},{id:'star',label:'おほしさま'},{id:'butterfly',label:'ちょうちょ'},{id:'ribbon',label:'リボン'},{id:'heart',label:'ハート'},{id:'gem',label:'ほうせき'}];
   const FALLBACK_CARDS = {dress:[{id:'ball',label:'ふんわり',colors:['#e7a5bb','#b5b4df','#a4cbd0']},{id:'flower',label:'おはな',colors:['#f0c5a0','#b0cbaa','#d9a9bf']},{id:'fairy',label:'ようせい',colors:['#b6cfae','#d2b5de','#a4d8d2']},{id:'moon',label:'おつきさま',colors:['#bec4e3','#e7c48e','#e5b7ca']},{id:'rose',label:'ばら',colors:['#dca1b4','#e7bb9f','#c9b6dd']},{id:'rainbow',label:'にじ',colors:['#e9b7c9','#c4bfe3','#b6d1cb']}],hair:[{id:'long',label:'さらさら'},{id:'braid',label:'みつあみ'},{id:'bob',label:'ふわり'}],accessory:[{id:'crown',label:'ティアラ'},{id:'bow',label:'リボン'},{id:'flowers',label:'おはな'},{id:'star',label:'おほしさま'}],background:[{id:'garden',label:'おにわ'},{id:'palace',label:'おしろ'},{id:'sky',label:'おそら'}]};
@@ -66,13 +66,15 @@
       result.nails = {hands:Array.from({length:10},(_,i)=>safeColor(s.nails?.hands?.[i])),feet:Array.from({length:10},(_,i)=>safeColor(s.nails?.feet?.[i]))};
       result.dressColor = safeColor(result.dressColor) || DEFAULT.dressColor;
       result.hairColor = safeColor(result.hairColor) || DEFAULT.hairColor;
+      for(const key of ['dressAccentColor','hairRibbonColor','accessoryColor','shoeColor','necklaceColor','ringColor','braceletColor','necklaceMetalColor','ringMetalColor','braceletMetalColor'])result[key]=safeColor(s[key]);
+      result.stickerColors=Object.fromEntries(STICKERS.map(({id})=>[id,safeColor(s.stickerColors?.[id])]).filter(([,v])=>v));
       result.makeup.blush = safeColor(result.makeup.blush); result.makeup.lip = safeColor(result.makeup.lip);
       result.faceStudioEnabled=s.faceStudioEnabled===true;const book=window.PrincessFriendBook;
       let member=result.faceStudioEnabled&&book?book.get(s.friendId||('cast-'+s.face)):null;
       if(result.faceStudioEnabled&&book&&!s.friendId&&s.faceOptions?.enabled){member=book.create(s.faceOptions);book.rememberLook(member.id,s);try{localStorage.setItem(STORAGE,JSON.stringify({...s,friendId:member.id}));}catch{}}
       if(!member)member=book?.get('cast-gentle')||{id:'cast-gentle',face:'gentle'};identity(result,member);
       result.sound = s.sound !== false;result.bgm=s.bgm!==false; result.unlocked = s.unlocked === true;
-      result.stickers = Array.isArray(s.stickers)?s.stickers.filter(x=>x&&['flower','star','butterfly','ribbon','heart','gem'].includes(x.id)&&Number.isFinite(x.x)&&Number.isFinite(x.y)).slice(0,24):[];
+      result.stickers = Array.isArray(s.stickers)?s.stickers.filter(x=>x&&['flower','star','butterfly','ribbon','heart','gem'].includes(x.id)&&Number.isFinite(x.x)&&Number.isFinite(x.y)).slice(0,24).map(x=>({...x,color:safeColor(x.color)})):[];
       return result;
     } catch { const result=clone(DEFAULT);result.casual=normalizeCasual();return result; }
   }
@@ -84,8 +86,8 @@
   }
   function normalizeCasual(value={}) {
     const defaults=window.CoordArt?.defaults||CASUAL_FALLBACK,result={...clone(CASUAL_FALLBACK),...clone(defaults),...value,styles:{}};
-    for(const {id} of CASUAL_PARTS){result[id]=typeof result[id]==='string'?result[id]:CASUAL_FALLBACK[id];const style={...CASUAL_FALLBACK.styles[id],...defaults.styles?.[id],...value?.styles?.[id]};result.styles[id]={color:style.color===null?null:safeColor(style.color)||CASUAL_FALLBACK.styles[id].color,pattern:['plain','stripes','dots','flowers','check'].includes(style.pattern)?style.pattern:'plain',ribbon:style.ribbon===true};}
-    result.accessory=typeof value.accessory==='string'?value.accessory:'none';result.background=outingEntries().some(item=>item.id===value.background)?value.background:'room';return result;
+    for(const {id} of CASUAL_PARTS){result[id]=typeof result[id]==='string'?result[id]:CASUAL_FALLBACK[id];const style={...CASUAL_FALLBACK.styles[id],...defaults.styles?.[id],...value?.styles?.[id]};result.styles[id]={color:style.color===null?null:safeColor(style.color)||CASUAL_FALLBACK.styles[id].color,pattern:['plain','stripes','dots','flowers','check'].includes(style.pattern)?style.pattern:'plain',ribbon:style.ribbon===true,ribbonColor:safeColor(style.ribbonColor),patternColor:safeColor(style.patternColor)};}
+    result.accessory=['none','crown','bow','flowers','star'].includes(value.accessory)?value.accessory:'none';result.background=outingEntries().some(item=>item.id===value.background)?value.background:'room';return result;
   }
   function effectiveBackground(){return state.mode==='casual'?state.casual.background:state.background;}
   function effectiveAccessory(){return state.mode==='casual'?state.casual.accessory:state.accessory;}
@@ -141,7 +143,7 @@
       }
     });
   }
-  function openCasualStyle(kind,announce=true){if(kind==='color'){openColourPalette(casualPart);return;}const options=kind==='pattern'?[{id:'plain',label:'むじ'},{id:'stripes',label:'しましま'},{id:'dots',label:'みずたま'},{id:'flowers',label:'おはな'},{id:'check',label:'チェック'}]:[{id:'off',label:'リボンなし'},{id:'on',label:'リボンあり'}];const current=state.casual.styles[casualPart];openModal(`${closeMarkup()}<h2>${kind==='pattern'?'もようを えらぼう':'リボンを つけよう'}</h2><div class="casual-style-options ${kind==='ribbon'?'ribbon-options':''}">${options.map(option=>{const active=kind==='pattern'?current.pattern===option.id:current.ribbon===(option.id==='on'),style={...current,...(kind==='pattern'?{pattern:option.id}:{ribbon:option.id==='on'})};return `<button class="choice ${active?'selected':''}" data-casual-style="${kind}" data-style-value="${option.id}" aria-label="${option.label}" aria-pressed="${active}"><span class="choice-art">${casualThumbnail(casualPart,state.casual[casualPart],style)}</span>${active?`<span class="choice-check">${icon('check')}</span>`:''}</button>`;}).join('')}</div><div class="modal-actions"><button class="action-button" data-colour-done>${icon('check')}<span>これに する</span></button></div>`,'casual-style-modal');if(announce)speak(kind);}
+  function openCasualStyle(kind,announce=true){if(kind==='color'){openColourPalette(casualPart);return;}const options=kind==='pattern'?[{id:'plain',label:'むじ'},{id:'stripes',label:'しましま'},{id:'dots',label:'みずたま'},{id:'flowers',label:'おはな'},{id:'check',label:'チェック'}]:[{id:'off',label:'リボンなし'},{id:'on',label:'リボンあり'}];const current=state.casual.styles[casualPart];openModal(`${closeMarkup()}<h2>${kind==='pattern'?'もようを えらぼう':'リボンを つけよう'}</h2><div class="casual-style-options ${kind==='ribbon'?'ribbon-options':''}">${options.map(option=>{const active=kind==='pattern'?current.pattern===option.id:current.ribbon===(option.id==='on'),style={...current,...(kind==='pattern'?{pattern:option.id}:{ribbon:option.id==='on'})};return `<button class="choice ${active?'selected':''}" data-casual-style="${kind}" data-style-value="${option.id}" aria-label="${option.label}" aria-pressed="${active}"><span class="choice-art">${casualThumbnail(casualPart,state.casual[casualPart],style)}</span>${active?`<span class="choice-check">${icon('check')}</span>`:''}</button>`;}).join('')}</div>${window.PrincessTrays.dyeButton(kind,kind==='ribbon'?!current.ribbon:current.pattern==='plain')}<div class="modal-actions"><button class="action-button" data-colour-done>${icon('check')}<span>これに する</span></button></div>`,'casual-style-modal');if(announce)speak(kind);}
   function persist() { try { localStorage.setItem(STORAGE,JSON.stringify(state)); } catch {} }
   function safeColor(c) { return typeof c === 'string' && /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(c) ? c : null; }
   function escapeAttr(value) { return String(value).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
@@ -172,7 +174,7 @@
   }
   function categoryVisual(name) {
     if(name==='background'&&window.PrincessOuting)return window.PrincessOuting.mapIcon();
-    if(name==='shoes'&&window.PrincessExtras)return window.PrincessExtras.card('shoes',state.shoes||'ballet');
+    if(name==='shoes'&&window.PrincessExtras)return window.PrincessExtras.card('shoes',state.shoes||'ballet',state);
     const png=assets().icons?.[name];return png?`<img class="category-asset" src="${escapeAttr(png)}" alt="">`:paintedIcon(name)||icon(name);
   }
   function icon(name) {
@@ -183,19 +185,20 @@
     const p = {check:'m6 16 6 6 14-14',close:'m8 8 16 16M24 8 8 24',undo:'M9 11H3V5m0 6a12 12 0 1 1 1 15',sound:'m4 12 7 0 8-7v22l-8-7H4zM24 10q7 6 0 12',settings:'M16 10a6 6 0 1 0 0 12 6 6 0 0 0 0-12M16 3v4m0 18v4M3 16h4m18 0h4M7 7l3 3m12 12 3 3M7 25l3-3M22 10l3-3',camera:'M4 9h7l3-4h5l3 4h6v18H4zM16 13a5 5 0 1 0 0 10 5 5 0 0 0 0-10',save:'M7 4h18v24H7zM11 4v9h10V4M11 21h10v7',dress:'m10 3 6 4 6-4 4 7-6 4 8 15H4l8-15-6-4z',hair:'M5 28V13a11 11 0 0 1 22 0v15M10 20V10q6 6 13 1v9',accessory:'m4 25 1-17 7 7 4-12 4 12 7-7 1 17z',background:'M3 27h26M7 27V15h18v12M5 15l5-9 6 9 6-9 5 9M14 27v-7h4v7',makeup:'M5 20h22v10H5zM9 20V9a7 7 0 0 1 14 0v11M13 8h6',hand:'M6 28V16q0-3 3-3v-7q0-4 3-2v10-10q2-3 4 0v10-9q3-3 4 1v8-5q3-2 3 2v8l4-4q4 0 2 4l-7 12z',foot:'M9 30Q1 17 12 11q8-4 11 5t-5 14zM13 4v2m6-3v3m6-1v4m4 0v4',blush:'M4 17a12 12 0 1 0 24 0 12 12 0 0 0-24 0M8 20h4m8 0h4M11 13h1m8 0h1',lip:'M3 17q5-3 9-7l4 3 4-3 9 7q-13 15-26 0zM3 17h26',polish:'M10 16h12v14H10zM13 4h6v12h-6z',lock:'M8 14h16v15H8zM11 14V8a5 5 0 0 1 10 0v6',gift:'M4 13h24v16H4zM2 8h28v7H2zM16 8v21M16 8Q3 8 7 2q5-3 9 6Zm0 0q13 0 9-6-5-3-9 6Z',star:'m16 2 4 9 10 1-8 7 3 10-9-5-9 5 3-10-8-7 10-1z','chevron-left':'m20 6-10 10 10 10','chevron-right':'m12 6 10 10-10 10','zoom-in':'M14 4a10 10 0 1 0 0 20 10 10 0 0 0 0-20m7 17 8 8M14 9v10m-5-5h10','zoom-out':'M14 4a10 10 0 1 0 0 20 10 10 0 0 0 0-20m7 17 8 8M9 14h10',mirror:'M16 3v26M12 7 2 25h10zM20 7l10 18H20z',photo:'M3 5h26v23H3zM3 25l9-10 6 7 5-5 6 8M22 10h.1','music-off':'M5 5l22 22M12 20V6l14-3v15M12 20q-8-4-8 2t8-2M26 18q-8-4-8 2t8-2',heart:'M16 28C-6 14 5-3 16 9 27-3 38 14 16 28z'}[name] || 'm16 2 4 9 10 1-8 7 3 10-9-5-9 5 3-10-8-7 10-1z';
     return `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${p}"/></svg>`;
   }
-  function stickerDrawing(id) {
-    const painted=window.PrincessExtras?.sticker(id);if(painted)return painted;
+  function stickerDrawing(id,color=null) {
+    const painted=window.PrincessExtras?.sticker(id,color);if(painted)return painted;
     const drawings={flower:`<g fill="#e8b0bd" stroke="#cc8d9d" stroke-width="1">${Array.from({length:6},(_,i)=>`<ellipse cx="0" cy="-18" rx="11" ry="17" transform="rotate(${i*60})"/>`).join('')}<circle r="11" fill="#f5d98a" stroke="#d5b46f"/></g>`,star:'<path d="m0-34 10 22 24 3-18 17 5 24L0 20l-21 12 5-24-18-17 24-3z" fill="#f3d58b" stroke="#d4b575" stroke-width="2"/><path d="m0-24 6 15 17 2-13 11 4 17L0 12-14 21l4-17-13-11 17-2z" fill="#f9e6b2"/>',butterfly:'<path d="M0-5C-35-49-51-11-28 7-54 24-17 45 0 11 17 45 54 24 28 7 51-11 35-49 0-5" fill="#d3bce1" stroke="#b49aca" stroke-width="2"/><path d="M0-10v31M0-9q-13-14-15-10M0-9q13-14 15-10" fill="none" stroke="#a98b74" stroke-width="4" stroke-linecap="round"/><circle cx="-24" cy="-9" r="6" fill="#f6dce7"/><circle cx="24" cy="-9" r="6" fill="#f6dce7"/>',ribbon:'<path d="m-5 3-11 33-10-12-14 2 18-31m27 8 11 33 10-12 14 2-18-31" fill="#d891a8" stroke="#bd708c" stroke-width="2"/><path d="M-4-9C-48-47-47 22-4 8m8-17C48-47 47 22 4 8" fill="#e8adbf" stroke="#c786a0" stroke-width="2"/><ellipse rx="8" ry="12" fill="#f4c4d2" stroke="#c786a0" stroke-width="2"/>',heart:'<path d="M0 34C-66-3-30-52 0-18 30-52 66-3 0 34" fill="#eaa1b4" stroke="#cc839b" stroke-width="2"/><path d="M-26-13q5-12 16-5" fill="none" stroke="#ffd9e0" stroke-width="5" stroke-linecap="round"/>',gem:'<path d="m-21-29 42 0 15 22L0 34-36-7z" fill="#aed4d7" stroke="#8eb6c2" stroke-width="2"/><path d="m-21-29 7 22L0 34 14-7l7-22M-36-7h72M-14-7 0-29 14-7" fill="none" stroke="#e4f5ed" stroke-width="2"/>'};
     return drawings[id]||drawings.flower;
   }
-  function stickerCard(id) {return `<svg viewBox="-55 -55 110 110" aria-hidden="true">${stickerDrawing(id)}</svg>`;}
+  function stickerCard(id,color=null) {return `<svg viewBox="-55 -55 110 110" aria-hidden="true">${stickerDrawing(id,color)}</svg>`;}
   function eraserIcon() {return '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="m7 21 16-16q3-3 6 0l7 7q3 3 0 6L20 34h-9L4 27q-2-3 3-6Z" fill="#e4afbd" stroke="#bd8c9e" stroke-width="1.6"/><path d="m7 21 13 13h-9L4 27q-2-3 3-6Z" fill="#fffaf4" stroke="#c9b4a3" stroke-width="1.6"/><path d="m18 10 13 13" stroke="#f4ced7" stroke-width="2"/></svg>';}
   function giftIllustration(open=false) {
     return `<svg viewBox="0 0 240 240" aria-hidden="true"><ellipse cx="120" cy="220" rx="89" ry="11" fill="#a8816d" opacity=".1"/>${open?'<rect x="57" y="19" width="126" height="126" rx="54" fill="#dca8bc" stroke="#bb829c" stroke-width="3"/><ellipse cx="120" cy="81" rx="49" ry="50" fill="#f4edf5" stroke="#f6dbc7" stroke-width="5"/><path d="m91 92 45-47m-30 66 43-45" stroke="#fffaf7" stroke-width="10" opacity=".85"/><g transform="rotate(-13 74 133)"><rect x="65" y="100" width="13" height="62" rx="5" fill="#caaa76"/><path d="M64 101q-11-29 8-34 18 3 8 34Z" fill="#aa7d65"/><path d="M67 98q-7-22 5-26" fill="none" stroke="#cba88c" stroke-width="3"/></g><rect x="105" y="105" width="24" height="46" rx="5" fill="#d9b36f"/><path d="M109 105V78q0-7 15-13v40" fill="#ce7d95"/><rect x="143" y="117" width="29" height="37" rx="8" fill="#b8a3d5" stroke="#a88bc6" stroke-width="2"/><rect x="150" y="91" width="15" height="29" rx="4" fill="#ede0c8"/>':'<path d="M114 85C39 70 65 12 116 76m10 9C201 70 175 12 124 76" fill="#e7b0c4" stroke="#c38da6" stroke-width="3"/><path d="M116 76 77 125l-1-26-22 1 48-31m22 7 39 49 1-26 22 1-48-31" fill="#edc3d2" stroke="#c38da6" stroke-width="2"/>'}<rect x="41" y="137" width="158" height="73" rx="13" fill="#daa0b5" stroke="#ba829b" stroke-width="3"/><path d="M42 151h156v27q-77 24-156 0Z" fill="#ebbdcb"/><rect x="31" y="119" width="178" height="29" rx="9" fill="#efd0d9" stroke="#c99aa9" stroke-width="3"/><path d="M110 120h22v89h-22Z" fill="#e6c285"/><rect x="111" y="166" width="20" height="22" rx="6" fill="#f4e1b9" stroke="#c7a26d" stroke-width="2"/><path d="m120 171 2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1Z" fill="#c49a61"/><path d="m28 57 4 10 10 3-10 3-4 10-3-10-10-3 10-3m181 16 4 11 11 3-11 3-4 11-3-11-11-3 11-3" fill="#d9b46e"/></svg>`;
   }
   function cardItems(cat,mode=state.mode) {
     if(cat==='background')return outingEntries();
-    if(cat==='accessory'&&mode==='casual')return [{id:'none',label:'はずす'},...((window.PrincessExtras?.cards?.accessory||FALLBACK_CARDS.accessory).filter(item=>['bow','flowers'].includes(item.id)))];
+    if(cat==='accessory')return [{id:'none',label:'はずす'},...(window.PrincessExtras?.cards?.accessory||FALLBACK_CARDS.accessory).filter(item=>item.id!=='none')];
+    if(['necklace','ring','bracelet'].includes(cat))return window.PrincessJewelry?.cards[cat]||[{id:'none',label:'はずす'}];
     const raw = cat==='hair'&&window.PrincessHair?.cards?window.PrincessHair.cards:art()?.cards?.[cat];
     const list = Array.isArray(raw) ? raw : FALLBACK_CARDS[cat]||[];
     const result=list.map(x=>typeof x==='string'?{id:x,label:x}:x);
@@ -207,7 +210,7 @@
     const index={flower:1,rose:1,rainbow:2}[item?.id]||0,c=item?.colors?.[index]||item?.colors?.[0];return safeColor(typeof c==='string'?c:c?.color||c?.value)||state.dressColor;
   }
   function validateDesign() {
-    for(const cat of ['dress','hair','face','accessory','shoes','background']) {
+    for(const cat of ['dress','hair','face','accessory','shoes','background','necklace','ring','bracelet']) {
       const items=cardItems(cat,'princess');
       if(items.length&&!items.some(x=>x.id===state[cat]))state[cat]=items[0].id;
     }
@@ -241,7 +244,7 @@
   }
   function renderCategories() {
     const categories=CATEGORIES.filter(c=>c.id!=='shoes'||state.mode==='princess');
-    $('#categories').innerHTML=categories.map(c=>`<button class="category ${category===c.id?'active':''}" data-category="${c.id}" aria-label="${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}${c.id==='makeup'&&!state.unlocked?'、できたを おすと ひらく':''}" aria-pressed="${category===c.id}"><span class="category-icon">${c.id==='dress'&&state.mode==='casual'?casualModeIcon():c.id==='accessory'&&state.mode==='casual'?window.PrincessExtras?.card?.('accessory','bow')||casualToolIcon('ribbon'):categoryVisual(c.id)}</span><span class="category-label">${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}</span>${c.id==='makeup'&&!state.unlocked?`<span class="lock-dot">${icon('lock')}</span>`:''}</button>`).join('');
+    $('#categories').innerHTML=categories.map(c=>`<button class="category ${category===c.id?'active':''}" data-category="${c.id}" aria-label="${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}${c.id==='makeup'&&!state.unlocked?'、できたを おすと ひらく':''}" aria-pressed="${category===c.id}"><span class="category-icon">${c.id==='dress'&&state.mode==='casual'?casualModeIcon():categoryVisual(c.id)}</span><span class="category-label">${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}</span>${c.id==='makeup'&&!state.unlocked?`<span class="lock-dot">${icon('lock')}</span>`:''}</button>`).join('');
   }
   function renderDoll() {
     const options={...state,background:effectiveBackground(),accessory:effectiveAccessory(),transparentBackground:true,photoUrl:photo?.url||null,hairFit:photo?.hairFit,gardenImageDataUrl:assets().garden||undefined};
@@ -260,7 +263,7 @@
     const matrix=svg.getScreenCTM().inverse(),r=stage.getBoundingClientRect(),point=svg.createSVGPoint();point.x=r.left;point.y=r.top;const a=point.matrixTransform(matrix);point.x=r.right;point.y=r.bottom;const b=point.matrixTransform(matrix);return {x:a.x,y:a.y,width:b.x-a.x,height:b.y-a.y};
   }
   function addStickers(svg,bounds=stageBounds()) {
-    if(svg&&state.stickers.length){const layer=document.createElementNS('http://www.w3.org/2000/svg','g');layer.setAttribute('class','sticker-layer');layer.innerHTML=state.stickers.map((s,index)=>{const x=Number.isFinite(s.nx)?bounds.x+s.nx*bounds.width:s.x,y=Number.isFinite(s.ny)?bounds.y+s.ny*bounds.height:s.y;return `<g data-sticker-index="${index}" transform="translate(${x} ${y}) scale(1.05)">${stickerDrawing(s.id)}</g>`;}).join('');svg.append(layer);}
+    if(svg&&state.stickers.length){const layer=document.createElementNS('http://www.w3.org/2000/svg','g');layer.setAttribute('class','sticker-layer');layer.innerHTML=state.stickers.map((s,index)=>{const x=Number.isFinite(s.nx)?bounds.x+s.nx*bounds.width:s.x,y=Number.isFinite(s.ny)?bounds.y+s.ny*bounds.height:s.y;return `<g data-sticker-index="${index}" transform="translate(${x} ${y}) scale(1.05)">${stickerDrawing(s.id,s.color)}</g>`;}).join('');svg.append(layer);}
   }
   function sceneMarkup(bounds=stageBounds()) {
     const container=document.createElement('div'),background=art().renderBackground({background:effectiveBackground(),gardenImageDataUrl:assets().garden||undefined});
@@ -302,19 +305,17 @@
     const body=$('#closetBody');
     body.classList.toggle('outing-shelf',category==='background'&&!!window.PrincessOuting);
     body.classList.toggle('hair-shelf',category==='hair');body.classList.toggle('extra-shelf',category==='accessory'||category==='shoes');
+    body.classList.toggle('trinket-shelf',category==='accessory'||category==='shoes'||category==='stickers');
     body.classList.toggle('casual-shelf',category==='dress'&&state.mode==='casual');
     if(category==='dress'&&state.mode==='casual'){renderCasual(body);return;}
     if(category==='makeup'){renderMakeup(body);return;}
     if(category==='background'&&window.PrincessOuting){renderOutings(body);return;}
     if(category==='hair'){renderHair(body);return;}
-    if(category==='accessory'&&state.mode==='casual'){
-      body.innerHTML=`<div class="cards casual-accessories">${cardItems('accessory').map(item=>`<button class="choice ${effectiveAccessory()===item.id?'selected':''}" data-casual-accessory="${item.id}" aria-label="${escapeAttr(item.label)}" aria-pressed="${effectiveAccessory()===item.id}"><span class="choice-art ${item.id==='none'?'no-accessory':''}">${item.id==='none'?casualToolIcon('ribbon')+'<b>×</b>':window.PrincessExtras?.card?.('accessory',item.id)||icon('accessory')}</span>${effectiveAccessory()===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`;return;
+    if(category==='accessory'){body.innerHTML=window.PrincessTrays.shelf();return;}
+    if(category==='shoes'&&window.PrincessExtras){
+      const ex=window.PrincessExtras;body.innerHTML='<div class="cards trinket-shoes">'+ex.cards.shoes.map(item=>`<button class="choice ${state.shoes===item.id?'selected':''}" data-extra-choice="${item.id}" aria-label="${escapeAttr(item.label)}" aria-pressed="${state.shoes===item.id}"><span class="choice-art">${ex.card('shoes',item.id,state)}</span>${state.shoes===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')+'</div>'+window.PrincessTrays.dyeButton('shoes');return;
     }
-    if((category==='accessory'||category==='shoes')&&window.PrincessExtras){
-      const ex=window.PrincessExtras,items=ex.cards[category];
-      body.innerHTML=`<div class="cards">${items.map(item=>`<button class="choice ${state[category]===item.id?'selected':''}" data-extra-choice="${item.id}" aria-label="${escapeAttr(item.label)}" aria-pressed="${state[category]===item.id}"><span class="choice-art">${ex.card(category,item.id)}</span>${state[category]===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`;return;
-    }
-    if(category==='stickers'){body.innerHTML=`<div class="sticker-cards">${STICKERS.map(s=>`<button class="choice ${selectedSticker===s.id?'selected':''}" data-sticker="${s.id}" aria-label="${s.label}" aria-pressed="${selectedSticker===s.id}"><span class="choice-art">${stickerCard(s.id)}</span>${selectedSticker===s.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`;return;}
+    if(category==='stickers'){body.innerHTML=`<div class="sticker-cards">${STICKERS.map(s=>`<button class="choice ${selectedSticker===s.id?'selected':''}" data-sticker="${s.id}" aria-label="${s.label}" aria-pressed="${selectedSticker===s.id}"><span class="choice-art">${stickerCard(s.id,state.stickerColors[s.id])}</span>${selectedSticker===s.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`+window.PrincessTrays.dyeButton('stickers');return;}
     const items=cardItems(category), perPage=items.length>4?3:4, pages=Math.ceil(items.length/perPage);page=Math.min(page,pages-1);
     const selectedValue=category==='background'?effectiveBackground():state[category];
     const shown=items.slice(page*perPage,page*perPage+perPage);
@@ -347,7 +348,7 @@
   function hairFamilyItems(family=currentHairFamily()){const items=cardItems('hair');return family.styles.map(id=>items.find(item=>item.id===id)).filter(Boolean);}
   function hairPerPage(){return window.matchMedia('(orientation:portrait)').matches?4:2;}
   function hairPaletteMarkup(){
-    return '<div class="hair-palette">'+colorsMarkup(hairColors(),state.hairColor,'hair')+'<button class="hair-more-colours" data-open-hair-palette aria-label="かみのけの もっと いろ">'+casualToolIcon('color')+'<span>もっと いろ</span></button></div>';
+    return '<div class="hair-palette">'+colorsMarkup(hairColors(),state.hairColor,'hair')+'<button class="hair-more-colours" data-open-hair-palette aria-label="かみのけの もっと いろ">'+casualToolIcon('color')+'<span>もっと いろ</span></button>'+ (window.PrincessHair?.hasRibbon?.(state.hair)?window.PrincessTrays?.accentButton('hairRibbon')||'':'')+'</div>';
   }
   function hairPreview(id){const preview=art()?.card?.('hair',id,{...state});return preview?preview.replace(/viewBox="[^"]+"/,'viewBox="130 38 340 442"'):icon('hair');}
   function speakHairChoice(id){const item=cardItems('hair').find(item=>item.id===id);if(item?.voiceKey)speak(item.voiceKey,item.label);else speakNamedChoice('hair',id);}
@@ -363,7 +364,7 @@
     $('#categoryTitle').textContent='つぎは、アレンジ';$('#wardrobeHint').textContent='むすぶ？ あむ？ そのまま？';
   }
   function colorsMarkup(colors,selected,kind,clear=false) {
-    return `<div class="colors ${kind==='nail'?'nail-colors':''} ${kind==='dress'?'dress-colors':''}" aria-label="いろ">${colors.map(c=>`<button class="color ${selected===c?'selected':''}" style="--swatch:${c}" data-color="${c}" data-color-kind="${kind}" aria-label="${colorName(c)}" aria-pressed="${selected===c}">${selected===c?icon('check'):''}</button>`).join('')}${clear?`<button class="color clear-color ${!selected?'selected':''}" data-color="clear" data-color-kind="${kind}" aria-label="おけしょうを とる">${eraserIcon()}</button>`:''}${kind==='dress'?`<button class="palette-open" data-open-dress-palette aria-label="たくさんの いろから えらぶ">${casualToolIcon('color')}</button>`:''}</div>`;
+    return `<div class="colors ${kind==='nail'?'nail-colors':''} ${kind==='dress'?'dress-colors':''}" aria-label="いろ">${colors.map(c=>`<button class="color ${selected===c?'selected':''}" style="--swatch:${c}" data-color="${c}" data-color-kind="${kind}" aria-label="${colorName(c)}" aria-pressed="${selected===c}">${selected===c?icon('check'):''}</button>`).join('')}${clear?`<button class="color clear-color ${!selected?'selected':''}" data-color="clear" data-color-kind="${kind}" aria-label="おけしょうを とる">${eraserIcon()}</button>`:''}${kind==='dress'?`<button class="palette-open" data-open-dress-palette aria-label="たくさんの いろから えらぶ">${casualToolIcon('color')}</button>${assets().costume?.dresses?.[state.dress]?.accentMaskSrc?window.PrincessTrays.accentButton('dressAccent'):''}`:''}</div>`;
   }
   function colorName(color) {
     const namedColour=window.CoordArt?.palette?.flatMap(group=>group.colors||[]).find(item=>item.hex?.toLowerCase()===color?.toLowerCase());if(namedColour)return namedColour.reading||namedColour.label;
@@ -481,7 +482,7 @@
     }
   }
   function selectedPage(cat){if(cat==='hair')return Math.max(0,Math.floor(hairFamilyItems().findIndex(item=>item.id===state.hair)/hairPerPage()));if(cat==='dress'&&state.mode==='casual'){const items=casualItems(casualPart);return Math.max(0,Math.floor(items.findIndex(x=>x.id===state.casual[casualPart])/(items.length>4?3:4)));}return cat==='dress'?Math.max(0,Math.floor(cardItems(cat).findIndex(x=>x.id===state[cat])/3)):0;}
-  function setCategory(cat) { category=cat;if(cat==='background')outingRegion=window.PrincessOuting?.regionFor(effectiveBackground())||'world';if(cat==='hair')hairStep='base';page=selectedPage(cat);makeupPart=null;renderCloset();renderStageLabel();speak(cat==='hair'?'hairChooseBase':cat==='makeup'&&!state.unlocked?'locked':cat==='dress'&&state.mode==='casual'?'casualMode':cat==='stickers'?'stickerHow':cat);effect();if(cat==='background'&&$('#closetBody').dataset.outingCompact==='true')openOutingMap(); }
+  function setCategory(cat) { category=cat;if(cat==='background')outingRegion=window.PrincessOuting?.regionFor(effectiveBackground())||'world';if(cat==='hair')hairStep='base';page=selectedPage(cat);makeupPart=null;renderCloset();renderStageLabel();speak(cat==='hair'?'hairChooseBase':cat==='accessory'?'jewelAccessory':cat==='makeup'&&!state.unlocked?'locked':cat==='dress'&&state.mode==='casual'?'casualMode':cat==='stickers'?'stickerHow':cat);effect();if(cat==='background'&&$('#closetBody').dataset.outingCompact==='true')openOutingMap(); }
 
   function openModal(markup, extraClass='', afterClose=null) {
     hideMakeupPortrait(true);
@@ -506,7 +507,7 @@
     if(person.id!==state.friendId){
       book.rememberLook(state.friendId||'cast-gentle',state);
       const sharedBackground=effectiveBackground(),look=book.getLook(person.id)||{},dressDefaults={};
-      for(const key of ['dress','dressColor','shoes','accessory','makeup','nails'])dressDefaults[key]=clone(DEFAULT[key]);
+      for(const key of ['dress','dressColor','dressAccentColor','hairRibbonColor','shoes','shoeColor','accessory','accessoryColor','necklace','necklaceColor','ring','ringColor','bracelet','braceletColor','necklaceMetalColor','ringMetalColor','braceletMetalColor','makeup','nails'])dressDefaults[key]=clone(DEFAULT[key]);
       Object.assign(state,dressDefaults,friendHair(person),look);state.casual=normalizeCasual(look.casual||{});
       if(state.mode==='casual')state.casual.background=sharedBackground;
     }
@@ -814,6 +815,8 @@
     const casualItem=e.target.closest('[data-casual-item]');if(casualItem){const id=casualItem.dataset.casualItem;change(()=>state.casual[casualPart]=id);speakCasualItem(casualPart,id);return;}
     const casualTool=e.target.closest('[data-casual-tool]');if(casualTool){openCasualStyle(casualTool.dataset.casualTool);return;}
     const casualAccessory=e.target.closest('[data-casual-accessory]');if(casualAccessory){change(()=>state.casual.accessory=casualAccessory.dataset.casualAccessory);speakNamedChoice('accessory',casualAccessory.dataset.casualAccessory);return;}
+    const tray=e.target.closest('[data-jewel-shelf]');if(tray){window.PrincessTrays.open(tray.dataset.jewelShelf);return;}
+    const dye=e.target.closest('[data-item-dye]');if(dye){window.PrincessTrays.colour(dye.dataset.itemDye);return;}
     if(e.target.closest('[data-open-hair-palette]')){openColourPalette('hair');return;}
     if(e.target.closest('[data-open-dress-palette]')){openColourPalette('dress');return;}
     if(e.target.closest('[data-first-done]')){openCompletion();return;}
@@ -842,7 +845,7 @@
     if(state.stickers.length>=24){toast('はった シールを タッチして はがしてね');return;}
     const svg=$('#doll>svg');if(!svg)return;const point=svg.createSVGPoint();point.x=e.clientX;point.y=e.clientY;
     const matrix=svg.getScreenCTM();if(!matrix)return;const p=point.matrixTransform(matrix.inverse()),r=$('#stage').getBoundingClientRect();
-    change(()=>state.stickers.push({id:selectedSticker,x:Math.round(p.x),y:Math.round(p.y),nx:(e.clientX-r.left)/r.width,ny:(e.clientY-r.top)/r.height}),{sparkle:false});
+    change(()=>state.stickers.push({id:selectedSticker,color:state.stickerColors[selectedSticker]||null,x:Math.round(p.x),y:Math.round(p.y),nx:(e.clientX-r.left)/r.width,ny:(e.clientY-r.top)/r.height}),{sparkle:false});
   });
   function chooseColor(button) {
     const color=button.dataset.color==='clear'?null:button.dataset.color,kind=button.dataset.colorKind;
@@ -852,6 +855,8 @@
   $('#modal').addEventListener('click',e=>{
     if(handleOutingClick(e))return;
     const t=e.target;
+    const jewel=t.closest('[data-jewel-item]');if(jewel){window.PrincessTrays.pick(jewel.dataset.jewelKind,jewel.dataset.jewelItem);return;}
+    const dye=t.closest('[data-item-dye]');if(dye){window.PrincessTrays.colour(dye.dataset.itemDye);return;}
     const casualStyle=t.closest('[data-casual-style]');if(casualStyle){const kind=casualStyle.dataset.casualStyle,value=casualStyle.dataset.styleValue;change(()=>{state.casual.styles[casualPart][kind]=kind==='ribbon'?value==='on':value;});openCasualStyle(kind,false);speakCasualStyle(kind,value);return;}
     if(t.closest('[data-colour-done]')){closeModal();return;}
     if(t.closest('[data-close]')||t.closest('[data-continue]')){closeModal();return;}
@@ -896,6 +901,7 @@
   let resizeFrame;window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{renderDoll();if(category==='background'&&window.PrincessOuting)renderOutings($('#closetBody'));if($('#modal').classList.contains('outing-modal'))fitOutingMap($('#modal'));});});
   const hairOrientation=window.matchMedia('(orientation:portrait)'),refreshHairOrientation=()=>{if(category==='hair'){page=selectedPage('hair');renderCloset();}};
   if(hairOrientation.addEventListener)hairOrientation.addEventListener('change',refreshHairOrientation);else hairOrientation.addListener(refreshHairOrientation);
+  window.PrincessTrays.configure({getState:()=>state,getCasualPart:()=>casualPart,getSticker:()=>selectedSticker,hairPreview,cardItems,casualThumbnail,stickerCard,openModal,closeMarkup,change,speak,icon,toolIcon:casualToolIcon,escape:escapeAttr,refreshCasual:kind=>openCasualStyle(kind,false)});
   window.PrincessColourBook?.configure({groups:paletteGroups,speak,icon,effect});
   window.PrincessMusic?.configure({
     track:()=>{

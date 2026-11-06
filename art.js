@@ -47,19 +47,20 @@
     if(id==='sky')return `<g><rect width="600" height="800" fill="url(#dream-sky)"/><path d="M-100 483 A400 400 0 0 1 700 483" fill="none" stroke="#f3bbc4" stroke-width="22" opacity=".45"/><path d="M-79 486 A379 379 0 0 1 679 486" fill="none" stroke="#f6dca3" stroke-width="22" opacity=".5"/><path d="M-58 489 A358 358 0 0 1 658 489" fill="none" stroke="#b9d6ca" stroke-width="22" opacity=".5"/><path d="M-37 492 A337 337 0 0 1 637 492" fill="none" stroke="#bfcfe8" stroke-width="22" opacity=".6"/>${rep(25,i=>star(35+(i*107)%535,47+(i*67)%490,3+i%5,i%2?'#fff9dd':'#e0bd82',.7))}<g fill="#fffaf7" opacity=".88"><ellipse cx="47" cy="633" rx="145" ry="63"/><ellipse cx="156" cy="655" rx="108" ry="56"/><ellipse cx="528" cy="620" rx="138" ry="72"/><ellipse cx="420" cy="663" rx="107" ry="49"/><ellipse cx="300" cy="760" rx="370" ry="112"/></g><ellipse cx="300" cy="750" rx="185" ry="23" fill="#c8b8ce" opacity=".17"/></g>`;
     return garden()+(asset?`<image id="garden-image" href="${esc(o.gardenImageDataUrl||'assets/garden.png')}" x="0" y="0" width="600" height="800" preserveAspectRatio="xMidYMid slice"/>`:'');
   }
-  function hairBack(id,hairColor){
-    if(window.PrincessHair?.back)return window.PrincessHair.back(id,hairColor);
+  function hairBack(id,hairColor,hairRibbonColor){
+    if(window.PrincessHair?.back)return window.PrincessHair.back(id,hairColor,hairRibbonColor);
     if(id==='bob')return `<g><path d="M226 280 Q195 270 214 230 C191 124 235 99 299 105 C371 101 405 151 387 230 Q403 278 375 293 Q349 313 324 284 L278 285 Q254 311 226 280Z" fill="url(#hair-dark)" stroke="#6b4848" stroke-width="2"/><path d="M226 174 Q210 226 231 271 M237 142 Q219 220 240 283 M373 163 Q392 231 371 277 M361 139 Q383 222 361 289" fill="none" stroke="#c08f76" stroke-width="2" opacity=".55"/></g>`;
     if(id==='braid')return `<g><path d="M225 233 C201 160 223 108 299 106 C376 101 406 160 375 241 L348 281 H251Z" fill="url(#hair-honey)" stroke="#a1744c" stroke-width="2"/>${[0,1].map(side=>`<g transform="${side?'translate(600 0) scale(-1 1)':''}"><path d="M230 227 Q211 270 225 321" fill="none" stroke="#9c6c45" stroke-width="27"/>${rep(6,i=>`<ellipse cx="${225+(i%2?4:-3)}" cy="${246+i*15}" rx="14" ry="11" transform="rotate(${i%2?25:-25} ${225+(i%2?4:-3)} ${246+i*15})" fill="url(#hair-honey)" stroke="#a87c50" stroke-width="1.3"/>`)}<path d="M228 330 Q213 346 226 355 Q239 347 228 330" fill="url(#hair-honey)"/><path d="M215 328 Q225 324 237 331" fill="none" stroke="#d5a4bb" stroke-width="6"/></g>`).join('')}</g>`;
     return `<g><path d="M218 321 C196 308 217 292 207 270 C189 231 212 207 210 174 C207 125 249 98 300 105 C362 100 397 132 390 186 C385 217 410 240 390 276 C377 301 403 320 379 338 C358 353 350 333 331 342 L269 342 C246 328 232 344 218 321Z" fill="url(#hair-brown)" stroke="#865941" stroke-width="2"/><path d="M235 149 C209 191 237 224 220 253 Q206 283 232 316 M249 132 C224 186 245 221 234 251 Q220 279 242 320 M365 152 C392 195 368 222 382 257 Q394 286 369 321 M350 133 C377 186 359 227 369 252 Q384 282 356 329" fill="none" stroke="#d4ac79" stroke-width="2.1" opacity=".6"/><path d="M224 208 Q211 233 223 254 M376 210 Q390 238 378 258" fill="none" stroke="#f2d4a0" stroke-width="4" opacity=".2"/></g>`;
   }
-  function hairFront(id,hairColor){if(window.PrincessHair?.front)return window.PrincessHair.front(id,hairColor);const gradient=id==='braid'?'hair-honey':id==='bob'?'hair-dark':'hair-brown';return `<g fill="url(#${gradient})" stroke="${id==='braid'?'#ac7d4e':'#815447'}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M231 202 Q207 163 234 130 Q259 104 299 111 Q337 103 366 130 Q394 160 371 205 L362 181 Q327 181 302 143 Q277 183 239 185Z"/><path d="M300 120 Q282 154 241 172 M300 127 Q280 162 239 178 M309 124 Q334 158 366 168 M314 120 Q341 152 369 161" fill="none" stroke="${id==='braid'?'#f6dca7':'#dfb38a'}" opacity=".55" stroke-width="2"/>${id==='bob'?`<path d="M234 178 Q218 217 231 254 L241 275 Q226 271 222 256 Q212 217 226 177Z"/><path d="M366 177 Q381 218 368 254 L359 276 Q374 271 378 255 Q388 217 374 176Z"/>`:`<path d="M232 177 Q221 211 235 235 Q244 254 232 271 Q246 267 246 250 Q244 233 239 221 Q231 203 240 180Z"/><path d="M369 176 Q380 208 367 231 Q358 252 371 269 Q356 266 355 250 Q356 234 363 219 Q371 201 361 179Z"/>`}<path d="M246 139 Q262 124 280 124 M326 123 Q343 128 353 140" fill="none" stroke="#fff2cd" opacity=".22" stroke-width="6"/></g>`;}
-  function accessory(id){
-    if(id==='bow')return `<g transform="translate(356 133) rotate(18)"><path d="M-4 5 Q-46 -34 -42 -5 Q-47 20 -4 12 M5 5 Q44 -29 42 -2 Q46 25 4 13" fill="#eaa5bd" stroke="#be7c9d" stroke-width="2"/><path d="M-3 12 L-13 44 -23 34 -34 35 -18 11 M4 12 L18 41 25 30 38 31 20 7" fill="#efbed1" stroke="#be7c9d" stroke-width="1.5"/><path d="M-32 -6 L-8 7 M31 -4 L7 8" stroke="#ffd7e2" stroke-width="3" fill="none"/><ellipse cx="0" cy="9" rx="9" ry="12" fill="#e294af" stroke="#be7c9d" stroke-width="1.5"/>${pearl(0,8,3)}</g>`;
-    if(id==='flowers')return `<g>${[-2,-1,0,1,2].map((p,i)=>leaf(300+p*26,130+Math.abs(p)*9,p*22,.7)+flower(300+p*27,122+Math.abs(p)*9,i%2?13:16,i%2?'#f8dfc2':'#eeb4c8','#e0bf72',i*19)).join('')}</g>`;
-    if(id==='star')return `<g><path d="M242 145 Q297 96 354 144" fill="none" stroke="url(#gold)" stroke-width="7"/>${[-1,0,1].map((p,i)=>star(300+p*42,111+Math.abs(p)*17,i===1?19:13,'#f8df92')+`<circle cx="${300+p*42}" cy="${111+Math.abs(p)*17}" r="3" fill="#fff8dc"/>`).join('')}<path d="M351 144 Q369 167 365 194" fill="none" stroke="#d7b66c" stroke-width="1.4"/>${star(365,196,7,'#f2d88f')}${pearl(365,181,2)}</g>`;
+  function hairFront(id,hairColor,hairRibbonColor){if(window.PrincessHair?.front)return window.PrincessHair.front(id,hairColor,hairRibbonColor);const gradient=id==='braid'?'hair-honey':id==='bob'?'hair-dark':'hair-brown';return `<g fill="url(#${gradient})" stroke="${id==='braid'?'#ac7d4e':'#815447'}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M231 202 Q207 163 234 130 Q259 104 299 111 Q337 103 366 130 Q394 160 371 205 L362 181 Q327 181 302 143 Q277 183 239 185Z"/><path d="M300 120 Q282 154 241 172 M300 127 Q280 162 239 178 M309 124 Q334 158 366 168 M314 120 Q341 152 369 161" fill="none" stroke="${id==='braid'?'#f6dca7':'#dfb38a'}" opacity=".55" stroke-width="2"/>${id==='bob'?`<path d="M234 178 Q218 217 231 254 L241 275 Q226 271 222 256 Q212 217 226 177Z"/><path d="M366 177 Q381 218 368 254 L359 276 Q374 271 378 255 Q388 217 374 176Z"/>`:`<path d="M232 177 Q221 211 235 235 Q244 254 232 271 Q246 267 246 250 Q244 233 239 221 Q231 203 240 180Z"/><path d="M369 176 Q380 208 367 231 Q358 252 371 269 Q356 266 355 250 Q356 234 363 219 Q371 201 361 179Z"/>`}<path d="M246 139 Q262 124 280 124 M326 123 Q343 128 353 140" fill="none" stroke="#fff2cd" opacity=".22" stroke-width="6"/></g>`;}
+  function accessory(id,value){
+    const ink=/^#[\da-f]{6}$/i.test(value||'')?value:null;
+    if(id==='bow')return `<g transform="translate(356 133) rotate(18)"><path d="M-4 5 Q-46 -34 -42 -5 Q-47 20 -4 12 M5 5 Q44 -29 42 -2 Q46 25 4 13" fill="${ink?ink:'#eaa5bd'}" stroke="${ink?mix(ink,'#593543',.46):'#be7c9d'}" stroke-width="2"/><path d="M-3 12 L-13 44 -23 34 -34 35 -18 11 M4 12 L18 41 25 30 38 31 20 7" fill="${ink?mix(ink,'#fff7ed',.34):'#efbed1'}" stroke="${ink?mix(ink,'#593543',.46):'#be7c9d'}" stroke-width="1.5"/><path d="M-32 -6 L-8 7 M31 -4 L7 8" stroke="${ink?mix(ink,'#fff7ed',.63):'#ffd7e2'}" stroke-width="3" fill="none"/><ellipse cx="0" cy="9" rx="9" ry="12" fill="${ink?ink:'#e294af'}" stroke="${ink?mix(ink,'#593543',.46):'#be7c9d'}" stroke-width="1.5"/>${pearl(0,8,3)}</g>`;
+    if(id==='flowers')return `<g>${[-2,-1,0,1,2].map((p,i)=>leaf(300+p*26,130+Math.abs(p)*9,p*22,.7)+flower(300+p*27,122+Math.abs(p)*9,i%2?13:16,i%2?'#f8dfc2':(ink||'#eeb4c8'),'#e0bf72',i*19)).join('')}</g>`;
+    if(id==='star')return `<g><path d="M242 145 Q297 96 354 144" fill="none" stroke="url(#gold)" stroke-width="7"/>${[-1,0,1].map((p,i)=>star(300+p*42,111+Math.abs(p)*17,i===1?19:13,ink||'#f8df92')+`<circle cx="${300+p*42}" cy="${111+Math.abs(p)*17}" r="3" fill="#fff8dc"/>`).join('')}<path d="M351 144 Q369 167 365 194" fill="none" stroke="#d7b66c" stroke-width="1.4"/>${star(365,196,7,ink||'#f2d88f')}${pearl(365,181,2)}</g>`;
     if(id==='none')return '';
-    return `<g><path d="M247 141 L243 114 266 127 278 96 300 121 323 96 335 127 358 114 353 141 Q302 153 247 141Z" fill="url(#gold)" stroke="#c69c54" stroke-width="1.7"/><path d="M250 136 Q299 146 351 136" fill="none" stroke="#fff1be" stroke-width="2"/><path d="M300 120 L307 130 300 140 293 130Z" fill="#d9a1bc" stroke="#fff3cc" stroke-width="1.2"/>${[248,266,279,323,337,355].map((x,i)=>pearl(x,[114,127,97,97,127,114][i],3)).join('')}${[261,280,320,339].map(x=>pearl(x,139,2)).join('')}</g>`;
+    return `<g><path d="M247 141 L243 114 266 127 278 96 300 121 323 96 335 127 358 114 353 141 Q302 153 247 141Z" fill="url(#gold)" stroke="#c69c54" stroke-width="1.7"/><path d="M250 136 Q299 146 351 136" fill="none" stroke="#fff1be" stroke-width="2"/><path d="M300 120 L307 130 300 140 293 130Z" fill="${ink?ink:'#d9a1bc'}" stroke="#fff3cc" stroke-width="1.2"/>${[248,266,279,323,337,355].map((x,i)=>pearl(x,[114,127,97,97,127,114][i],3)).join('')}${[261,280,320,339].map(x=>pearl(x,139,2)).join('')}</g>`;
   }
   function wings(){return `<g fill="#ecf7ed" fill-opacity=".66" stroke="#a8c6bd" stroke-width="1.6"><path d="M263 380 C232 304 159 289 167 336 C169 362 202 388 247 404 C196 388 166 407 185 432 C202 453 243 435 266 415Z"/><path d="M337 380 C368 304 441 289 433 336 C431 362 398 388 353 404 C404 388 434 407 415 432 C398 453 357 435 334 415Z"/><path d="M258 396 Q206 337 181 328 M257 402 Q211 412 193 423 M342 396 Q394 337 419 328 M343 402 Q389 412 407 423" fill="none" stroke="#c9dfc9" stroke-width="2"/>${star(191,343,7,'#fff5cc')}${star(408,341,7,'#fff5cc')}</g>`;}
   function legsAndFeet(o){const feet=o.nails?.feet||[];return `<g><path d="M251 629 L249 708 Q249 724 262 733 L280 731 285 633 M315 633 L320 731 338 733 Q351 724 351 708 L349 629" fill="url(#skin)" stroke="#d2a78e" stroke-width="1.5"/><g fill="url(#skin)" stroke="#d2a78e" stroke-width="1.3"><path d="M252 712 C244 719 241 739 246 744 Q264 754 283 741 L280 714Z"/><path d="M320 714 L317 741 Q336 754 354 744 C359 739 356 719 348 712Z"/></g><path d="M246 735 Q264 742 282 731 M319 731 Q337 742 354 735 M253 714 Q268 725 278 717 M322 717 Q332 725 347 714" fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>${rep(10,i=>{const side=i>=5,j=i%5,x=side?324+j*6:276-j*6,y=737+Math.sin(j/4*Math.PI)*3;return `<ellipse cx="${x}" cy="${y}" rx="${j===0?3:2.2}" ry="3.2" fill="${color(feet[i],'#f3c5b5')}" stroke="#c59888" stroke-width=".45"/>`;})}${flower(267,724,7,'#fff0d9')}${flower(333,724,7,'#fff0d9')}</g>`;}
@@ -141,11 +142,24 @@
     const dark=mix(c,'#3f3041',.48),light=mix(c,'#fffdf4',.66),table=i=>[parseInt(dark.slice(i,i+2),16)/255,parseInt(c.slice(i,i+2),16)/255,parseInt(light.slice(i,i+2),16)/255].map(v=>v.toFixed(4)).join(' ');
     return `<filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${table(1)}"/><feFuncG type="table" tableValues="${table(3)}"/><feFuncB type="table" tableValues="${table(5)}"/><feFuncA type="identity"/></feComponentTransfer></filter>`;
   }
-  function paintedDress(id,c,asset) {
-    const image=`<image href="${esc(asset.src)}" x="${asset.x}" y="${asset.y}" width="${asset.w}" height="${asset.h}" preserveAspectRatio="none"`;
-    if(c.toLowerCase()===color(asset.baseColor).toLowerCase())return `<g class="painted-dress" data-dress-art="painted" data-dress="${id}">${image}/></g>`;
-    const prefix=`costume-${++costumeSerial}`,filter=prefix+'-tint',mask=prefix+'-fabric';
-    return `<g class="painted-dress" data-dress-art="painted" data-dress="${id}"><defs>${dressTint(c,filter)}${asset.maskSrc?`<mask id="${mask}" maskUnits="userSpaceOnUse" x="${asset.x}" y="${asset.y}" width="${asset.w}" height="${asset.h}" style="mask-type:alpha"><image href="${esc(asset.maskSrc)}" x="${asset.x}" y="${asset.y}" width="${asset.w}" height="${asset.h}" preserveAspectRatio="none"/></mask>`:''}</defs>${image}/>${image} filter="url(#${filter})"${asset.maskSrc?` mask="url(#${mask})"`:''}/></g>`;
+  function paintedDress(id,c,asset,accentColor){
+    const image='<image href="'+esc(asset.src)+'" x="'+asset.x+'" y="'+asset.y+'" width="'+asset.w+'" height="'+asset.h+'" preserveAspectRatio="none"';
+    const bounds='x="'+asset.x+'" y="'+asset.y+'" width="'+asset.w+'" height="'+asset.h+'"';
+    const paintMask=(key,url)=>'<mask id="'+key+'" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" '+bounds+' style="mask-type:alpha"><image href="'+esc(url)+'" '+bounds+' preserveAspectRatio="none"/></mask>';
+    let layers=image+'/>';
+    if(c.toLowerCase()!==color(asset.baseColor).toLowerCase()){
+      const prefix='costume-'+(++costumeSerial),filter=prefix+'-tint',mask=prefix+'-fabric';
+      layers+='<defs>'+dressTint(c,filter)+(asset.maskSrc?paintMask(mask,asset.maskSrc):'')+'</defs>'
+        +image+' filter="url(#'+filter+')"'+(asset.maskSrc?' mask="url(#'+mask+')"':'')+'/>';
+    }
+    if(asset.accentMaskSrc&&/^#[\da-f]{6}$/i.test(accentColor||'')){
+      const mask='costume-accent-'+(++costumeSerial),filter=mask+'-tint';
+      const original=accentColor.toLowerCase()===asset.accentBaseColor;
+      const tint=original?'':window.CoordArt?.tintFilter?.(filter,accentColor,asset.accentBaseColor)||dressTint(accentColor,filter);
+      layers+='<defs>'+paintMask(mask,asset.accentMaskSrc)+tint+'</defs><g class="dress-accent" mask="url(#'+mask+')">'
+        +image+(original?'':' filter="url(#'+filter+')"')+'/></g>';
+    }
+    return '<g class="painted-dress" data-dress-art="painted" data-dress="'+esc(id)+'">'+layers+'</g>';
   }
   const HEAD_TRANSFORM='translate(300 312) scale(.8) translate(-300 -312)';
   function photoHairFit(content,o={}) {
@@ -158,14 +172,15 @@
   function renderRaw(o={}) {
     const c=color(o.dressColor),type=cards.dress.some(v=>v.id===o.dress)?o.dress:'ball',hair=cards.hair.some(v=>v.id===o.hair)?o.hair:'long';
     const body=costumeAsset('body'),dress=costumeAsset('dress',type),casual=o.mode==='casual'&&window.CoordArt;
-    const headwear=casual?(o.casual?.accessory||'none'):(o.accessory||'crown'),headgear=headwear==='none'?'':window.PrincessExtras?.headAccessory?.(headwear)??accessory(headwear);
+    const headwear=casual?(o.casual?.accessory||'none'):(o.accessory||'crown'),headgear=headwear==='none'?'':window.PrincessExtras?.headAccessory?.(headwear,o.accessoryColor)??accessory(headwear,o.accessoryColor);
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800" role="img" aria-label="${casual?'おでかけの コーディネート':'おひめさまの コーディネート'}">${defs(c)}${background((casual?o.casual?.background:o.background)||'garden',o)}
       <ellipse cx="300" cy="751" rx="145" ry="16" fill="#8b7782" opacity=".14" filter="url(#soft-shadow)"/>
-      <g class="head-back" transform="${HEAD_TRANSFORM}">${photoHairFit(hairBack(hair,o.hairColor),o)}</g>
+      <g class="head-back" transform="${HEAD_TRANSFORM}">${photoHairFit(hairBack(hair,o.hairColor,o.hairRibbonColor),o)}</g>
       ${casual?window.CoordArt.body(o,body):body?paintedBody(o,body):`${type==='fairy'?wings():''}${legsAndFeet(o)}<path d="M284 283 V311 Q300 326 316 311 V283 M263 317 Q300 303 337 317 L329 407 H271Z" fill="url(#skin)" stroke="#d2a78e" stroke-width="1.25"/><path d="M289 299 Q300 305 311 299" fill="none" stroke="#dfb59a" stroke-width="1.1"/>${arms()}`}
-      ${casual?window.CoordArt.outfit(o):(window.PrincessExtras?.shoe?.(o.shoes,o)||'')+(dress?paintedDress(type,c,dress):skirt(c,type)+bodice(c,type))}${body?paintedHandsFront(o,body,casual?window.CoordArt.sleeve(o.casual||{}):dress):hands(o)}
-      <g class="head-front" transform="${HEAD_TRANSFORM}">${face(o)}${photoHairFit(hairFront(hair,o.hairColor),o)}${photoHairFit(headgear,o)}</g>
-      ${casual?'':star(172,329,7,'#fff2ca',.9)+star(433,484,6,'#fff4d8',.8)}
+      ${casual?window.CoordArt.outfit(o):(window.PrincessExtras?.shoe?.(o.shoes,o)||'')+(dress?paintedDress(type,c,dress,o.dressAccentColor):skirt(c,type)+bodice(c,type))}${body?paintedHandsFront(o,body,casual?window.CoordArt.sleeve(o.casual||{}):dress):hands(o)}
+      ${['necklace','ring','bracelet'].map(kind=>window.PrincessJewelry?.scene(kind,o)||'').join('')}
+      <g class="head-front" transform="${HEAD_TRANSFORM}">${face(o)}${photoHairFit(hairFront(hair,o.hairColor,o.hairRibbonColor),o)}${photoHairFit(headgear,o)}</g>
+      ${casual||o.hideSceneSparkles?'':star(172,329,7,'#fff2ca',.9)+star(433,484,6,'#fff4d8',.8)}
     </svg>`;
   }
   let renderSerial=0;
@@ -179,13 +194,13 @@
   }
   let cardSerial=0;
   function card(category,id,settings={}) {
-    if(category==='accessory'||category==='shoes'){const external=window.PrincessExtras?.card?.(category,id);if(external)return external;}
+    if(category==='accessory'||category==='shoes'){const external=window.PrincessExtras?.card?.(category,id,settings);if(external)return external;}
     if(typeof settings==='string')settings={dressColor:settings};
     const c=color(settings.dressColor||settings.color),selectedHair=settings.hair||'long';let content='',box='0 0 150 160';
-    if(category==='dress'){const dress=costumeAsset('dress',id);if(dress){content=paintedDress(id,c,dress);box=`${dress.x-10} ${dress.y-10} ${dress.w+20} ${dress.h+20}`;}else{content=`<g transform="translate(-45 -275) scale(.9)">${skirt(c,id)}${bodice(c,id)}</g>`;box='70 0 310 400';}}
-    else if(category==='hair'){content=hairBack(id,settings.hairColor)+face({...settings,photoUrl:null})+hairFront(id,settings.hairColor);box='130 15 340 440';}
-    else if(category==='face'){content=hairBack(selectedHair,settings.hairColor)+face({...settings,face:id,photoUrl:null})+hairFront(selectedHair,settings.hairColor);box='211 120 178 187';}
-    else if(category==='accessory'){const painted=window.PrincessExtras?.headAccessory?.(id);if(painted!=null){content=painted;box='210 60 180 155';}else{content=`<g transform="translate(${id==='bow'?-282:-222} -57) scale(1.01)">${accessory(id)}</g>`;box='0 0 160 150';}}
+    if(category==='dress'){const dress=costumeAsset('dress',id);if(dress){content=paintedDress(id,c,dress,settings.dressAccentColor);box=`${dress.x-10} ${dress.y-10} ${dress.w+20} ${dress.h+20}`;}else{content=`<g transform="translate(-45 -275) scale(.9)">${skirt(c,id)}${bodice(c,id)}</g>`;box='70 0 310 400';}}
+    else if(category==='hair'){content=hairBack(id,settings.hairColor,settings.hairRibbonColor)+face({...settings,photoUrl:null})+hairFront(id,settings.hairColor,settings.hairRibbonColor);box='130 15 340 440';}
+    else if(category==='face'){content=hairBack(selectedHair,settings.hairColor,settings.hairRibbonColor)+face({...settings,face:id,photoUrl:null})+hairFront(selectedHair,settings.hairColor,settings.hairRibbonColor);box='211 120 178 187';}
+    else if(category==='accessory'){const painted=window.PrincessExtras?.headAccessory?.(id,settings.accessoryColor);if(painted!=null){content=painted;box='210 60 180 155';}else{content=`<g transform="translate(${id==='bow'?-282:-222} -57) scale(1.01)">${accessory(id,settings.accessoryColor)}</g>`;box='0 0 160 150';}}
     else if(category==='shoes'){content=window.PrincessExtras?.shoe?.(id)||'';box='220 680 160 110';}
     else if(category==='background')content=`<g transform="scale(.25 .2)">${background(id,{},false)}</g>`;
     else content=star(75,75,22,'#dfbc7f');

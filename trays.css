@@ -1,0 +1,29 @@
+/* The shelf has four large, illustrated drawers. Keep the small things large in the mirror. */
+.trinket-box{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;min-height:0;align-items:stretch;flex:1;width:100%;max-height:188px}
+.trinket-box-button,.trinket-item{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:44px;background:linear-gradient(160deg,#fffdfa,#f8ecdf);border:1px solid #e7cdba;border-radius:19px;box-shadow:0 3px 8px #915f4010;padding:5px;color:#654b46}
+.trinket-box-button>span,.trinket-item>span{display:block;flex:1;min-height:0;width:100%;max-height:118px}
+.trinket-box-button>span>svg,.trinket-item>span>svg,.trinket-portrait>svg{display:block;width:100%;height:100%;object-fit:contain}
+.trinket-box-button>small,.trinket-item>small{font-size:clamp(10px,1.3vw,13px);font-weight:700;line-height:1.2;min-height:1.3em;text-align:center;overflow-wrap:anywhere}
+.trinket-check{position:absolute;right:4px;top:4px;width:19px;height:19px;padding:2px;background:#b97890;color:white;border-radius:50%;display:grid;place-items:center}.trinket-check>svg{width:100%;height:100%}
+.trinket-shelf .item-dye,.item-dye{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;min-width:80px;flex:none;width:max-content;max-width:100%;margin:6px auto 0;padding:4px 15px;border:1px solid #d1ac90;border-radius:20px;background:#fff7e9;font-size:14px;font-weight:700}
+.item-dye>svg{width:33px;height:33px}.item-dye:disabled{opacity:.45}
+.trinket-modal{width:min(790px,100%);padding:20px;overflow:auto;overscroll-behavior:contain}.trinket-modal h2{margin:0 46px 12px}.trinket-modal .modal-actions{margin-top:10px}
+.trinket-panel{display:grid;grid-template-columns:minmax(140px,.92fr) minmax(230px,1.38fr);gap:16px;align-items:center}
+.trinket-mirror{display:grid;gap:5px;text-align:center;align-self:stretch;grid-template-rows:minmax(0,1fr) auto;color:#755147;font-weight:700}
+.trinket-portrait{display:grid;align-items:center;justify-items:center;background:radial-gradient(ellipse,#fffaf3,#f4e4d6);border:1px solid #e7cfbd;border-radius:30px;min-height:100px;overflow:hidden}
+.trinket-options{min-width:0}.trinket-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.trinket-item{height:clamp(85px,15dvh,126px);padding:5px}.trinket-item[aria-pressed=true]{border:2px solid #ba7a91;background:#fff2f3}
+.trinket-item>small{font-size:11px;min-height:2.45em;display:grid;align-items:center}
+.item-original{border:1px solid #d6baa8;background:#fffaf4;color:#77584e;border-radius:15px;padding:7px 12px;min-height:44px}
+.trinket-shelf .sticker-cards,.trinket-shelf .trinket-shoes{min-height:0;flex:1}
+@media(max-width:560px) and (orientation:portrait){
+.trinket-box{gap:5px}.trinket-box-button{border-radius:14px}.trinket-box-button>small{font-size:10px}
+.trinket-panel{grid-template-columns:1fr;gap:8px}.trinket-mirror{grid-template-columns:105px 1fr;grid-template-rows:105px;align-items:center;gap:10px;justify-self:center;text-align:left}
+.trinket-portrait{width:105px;height:105px;border-radius:20px}.trinket-item{height:85px}
+.trinket-modal{padding:13px}.trinket-modal h2{margin-bottom:8px}.trinket-grid{gap:5px}
+}
+@media(orientation:landscape) and (max-height:480px){.trinket-modal{padding:10px 15px}.trinket-modal h2{font-size:18px;margin-bottom:6px}.trinket-item{height:64px}.trinket-item>small{font-size:9px}.trinket-modal .modal-actions{margin-top:5px}}
+
+.trinket-dye-row{display:flex;justify-content:center;flex-wrap:wrap;gap:6px}.trinket-dye-row .item-dye{margin:6px 0 0;font-size:13px;padding:3px 9px}.trinket-dye-row .item-dye svg{width:26px;height:26px}
+
+.accent-paint{display:inline-flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;min-height:44px;min-width:56px;max-width:90px;padding:3px 7px;border:1px solid #c9a38e;border-radius:14px;background:#fff6eb;flex-shrink:0}.accent-paint svg{width:26px;height:22px}.accent-paint span{font-size:10px;line-height:1.1}.hair-shelf .hair-palette:has(.accent-paint){grid-template-columns:minmax(0,1fr) auto auto}

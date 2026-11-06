@@ -118,6 +118,7 @@
     "parts": [
       {
         "src": "assets/extras/shoe-ballet-left.png",
+        "maskSrc": "assets/extras/shoe-ballet-left-fabric.png",
         "pixelWidth": 289,
         "pixelHeight": 434,
         "x": 248,
@@ -127,6 +128,7 @@
       },
       {
         "src": "assets/extras/shoe-ballet-right.png",
+        "maskSrc": "assets/extras/shoe-ballet-right-fabric.png",
         "pixelWidth": 295,
         "pixelHeight": 434,
         "x": 302,
@@ -142,6 +144,7 @@
     "parts": [
       {
         "src": "assets/extras/shoe-strap-left.png",
+        "maskSrc": "assets/extras/shoe-strap-left-fabric.png",
         "pixelWidth": 302,
         "pixelHeight": 438,
         "x": 248,
@@ -151,6 +154,7 @@
       },
       {
         "src": "assets/extras/shoe-strap-right.png",
+        "maskSrc": "assets/extras/shoe-strap-right-fabric.png",
         "pixelWidth": 298,
         "pixelHeight": 439,
         "x": 302,
@@ -166,6 +170,7 @@
     "parts": [
       {
         "src": "assets/extras/shoe-boots-left.png",
+        "maskSrc": "assets/extras/shoe-boots-left-fabric.png",
         "pixelWidth": 293,
         "pixelHeight": 465,
         "x": 248,
@@ -175,6 +180,7 @@
       },
       {
         "src": "assets/extras/shoe-boots-right.png",
+        "maskSrc": "assets/extras/shoe-boots-right-fabric.png",
         "pixelWidth": 295,
         "pixelHeight": 479,
         "x": 302,
@@ -204,32 +210,81 @@
     if(!['x','y','w','h'].every(k=>Number.isFinite(m[k]))||m.w<=0||m.h<=0)return '';
     return '<image href="'+esc(meta.src)+'" x="'+m.x+'" y="'+m.y+'" width="'+m.w+'" height="'+m.h+'" preserveAspectRatio="'+(override.aspect||'none')+'"/>';
   }
-  function headAccessory(id) {
+  let tintSerial=0;
+  // The watercolor is painted in three different pigment families. Isolate
+  // the original dye using channel differences so pearls, leaves, and gold
+  // settings around pink gemstones retain their own colors.
+  function dyePigment(markup,color,family='rose') {
+    if(!markup||!/^#[\da-f]{6}$/i.test(color||''))return markup;
+    const mask={rose:'5.2 -13.2 8 0 -.13',gold:'0 9 -9 0 -.18',aqua:'-9 5 4 0 -.15'}[family];
+    const id='extra-watercolor-'+(++tintSerial);
+    const curves=[1,3,5].map((offset,i)=>{
+      const pigment=parseInt(color.slice(offset,offset+2),16)/255;
+      const mid=.11+.78*pigment;
+      const values=Array.from({length:17},(_,j)=>{
+        const y=j/16;
+        return (y<.72?mid*(.06+.94*y/.72):mid+(1-mid)*((y-.72)/.28)**1.18).toFixed(4);
+      });
+      return `<feFunc${'RGB'[i]} type="table" tableValues="${values.join(' ')}"/>`;
+    }).join('');
+    return `<defs><filter id="${id}" x="-1%" y="-1%" width="102%" height="102%" color-interpolation-filters="sRGB">
+      <feColorMatrix in="SourceGraphic" type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0" result="value"/>
+      <feComponentTransfer in="value" result="paint">${curves}<feFuncA type="identity"/></feComponentTransfer>
+      <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ${mask}" result="pigment"/>
+      <feComposite in="paint" in2="pigment" operator="in" result="colored"/>
+      <feComposite in="SourceGraphic" in2="pigment" operator="out" result="original"/>
+      <feComposite in="colored" in2="original" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter></defs><g filter="url(#${id})">${markup}</g>`;
+  }
+  function ornamentImage(id,m,color,placement) {
+    const family=id==='star'?'gold':id==='gem'?'aqua':'rose';
+    return dyePigment(image(m,placement),color,family);
+  }
+  function headAccessory(id,color=null) {
     if(id==='none')return '';
     const m=entry('head-'+id);
-    return m?'<g class="painted-head-accessory" data-extra="head-'+esc(id)+'" aria-hidden="true">'+image(m)+'</g>':'';
+    return m?'<g class="painted-head-accessory" data-extra="head-'+esc(id)+'" aria-hidden="true">'+ornamentImage(id,m,color)+'</g>':'';
   }
-  function shoe(id,state) {
+  const shoeBases={ballet:'#e7b0a7',strap:'#e9d2c3',boots:'#ccacb6'};
+  function shoePart(shoe,part,state){
+    const imageMarkup=image(part);
+    const original=window.PrincessBodySkin?.sceneShoes(state,shoe,imageMarkup)??imageMarkup;
+    const color=state?.shoeColor,filter=window.CoordArt?.tintFilter;
+    if(!/^#[\da-f]{6}$/i.test(color||'')||!localImage(part.maskSrc)||!filter)return original;
+    const key='shoe-fabric-'+(++tintSerial),mask=key+'-mask';
+    return '<g class="dyed-shoe">'+original+'<defs>'+filter(key,color,shoeBases[shoe.id])
+      +'<mask id="'+mask+'" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="'+part.x+'" y="'+part.y+'" width="'+part.w+'" height="'+part.h+'" style="mask-type:alpha">'
+      +image({...part,src:part.maskSrc})+'</mask></defs><g mask="url(#'+mask+')"><g filter="url(#'+key+')">'+imageMarkup+'</g></g></g>';
+  }
+  function shoe(id,state){
     const m=entry('shoe-'+id);
-    const markup=m?'<g class="painted-shoes" data-extra="shoe-'+esc(id)+'" aria-hidden="true">'+(m.parts||[]).map(p=>image(p)).join('')+'</g>':'';
-    return window.PrincessBodySkin?.sceneShoes(state,m,markup)??markup;
+    return m?'<g class="painted-shoes" data-extra="shoe-'+esc(id)+'" aria-hidden="true">'+(m.parts||[]).map(part=>shoePart(m,part,state)).join('')+'</g>':'';
   }
-  function sticker(id) {
+  function shoeCardPart(shoe,part,index,state){
+    // Keep the original thumbnail's fit, sharing exactly the scene's fabric and skin masks.
+    const scale=Math.min(52/part.pixelWidth,126/part.pixelHeight);
+    const w=part.pixelWidth*scale,h=part.pixelHeight*scale;
+    const x=(index?80:18)+(52-w)/2,y=17+(126-h)/2;
+    const transform='translate('+x+' '+y+') scale('+w/part.w+' '+h/part.h+') translate('+(-part.x)+' '+(-part.y)+')';
+    return '<g transform="'+transform+'">'+shoePart(shoe,part,state)+'</g>';
+  }
+  function sticker(id,color=null) {
     const m=entry('sticker-'+id);
-    return m?'<g class="painted-sticker" data-extra="sticker-'+esc(id)+'" aria-hidden="true">'+image(m)+'</g>':'';
+    return m?'<g class="painted-sticker" data-extra="sticker-'+esc(id)+'" aria-hidden="true">'+ornamentImage(id,m,color)+'</g>':'';
   }
-  function card(category,id) {
+  function card(category,id,state={}) {
     const kind=category==='accessory'?'head':category==='shoes'||category==='shoe'?'shoe':category==='stickers'||category==='sticker'?'sticker':null;
     if(!kind)return '';
     const m=entry(kind+'-'+id);
     if(!m)return '';
     let content='';
     if(kind==='shoe') {
-      content=(m.parts||[]).map((p,i)=>image(p,{x:i?80:18,y:17,w:52,h:126,aspect:'xMidYMid meet'})).join('');
+      content=(m.parts||[]).map((part,i)=>shoeCardPart(m,part,i,state)).join('');
     } else {
-      content=image(m,{x:12,y:14,w:126,h:132,aspect:'xMidYMid meet'});
+      const color=kind==='head'?state.accessoryColor:state.stickerColor;
+      content=ornamentImage(id,m,color,{x:12,y:14,w:126,h:132,aspect:'xMidYMid meet'});
     }
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 160" width="150" height="160" aria-hidden="true">'+content+'</svg>';
   }
-  window.PrincessExtras=Object.freeze({cards,headAccessory,shoe,sticker,card});
+  window.PrincessExtras=Object.freeze({cards,headAccessory,shoe,sticker,card,dyeRibbon:dyePigment});
 })();

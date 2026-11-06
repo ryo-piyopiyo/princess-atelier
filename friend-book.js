@@ -51,21 +51,21 @@
   }
   function allowed(kind){
     let supplied;
-    try{if(kind==='hair')supplied=window.PrincessHair?.cards;else if(kind==='dress')supplied=window.PrincessArt?.cards?.dress;else if(kind==='shoes')supplied=window.PrincessExtras?.cards?.shoes;else if(parts.includes(kind)||kind==='casualShoes')supplied=window.CoordArt?.items?.(kind==='casualShoes'?'shoes':kind);}catch{}
+    try{if(kind==='hair')supplied=window.PrincessHair?.cards;else if(['necklace','ring','bracelet'].includes(kind))supplied=window.PrincessJewelry?.cards?.[kind];else if(kind==='dress')supplied=window.PrincessArt?.cards?.dress;else if(kind==='shoes')supplied=window.PrincessExtras?.cards?.shoes;else if(parts.includes(kind)||kind==='casualShoes')supplied=window.CoordArt?.items?.(kind==='casualShoes'?'shoes':kind);}catch{}
     return new Set([...(fallbacks[kind]||[]),...(Array.isArray(supplied)?supplied.map(item=>item.id).filter(id=>typeof id==='string'&&/^[a-z0-9-]{1,48}$/.test(id)):[])]);
   }
   function cleanCasual(value){
     const input=object(value),result={},styles=object(input.styles);
     for(const part of parts){if(allowed(part==='shoes'?'casualShoes':part).has(input[part]))result[part]=input[part];}
-    if(['none','bow','flowers'].includes(input.accessory))result.accessory=input.accessory;
+    if(['none','crown','star','bow','flowers'].includes(input.accessory))result.accessory=input.accessory;
     result.styles={};
-    for(const part of parts){if(!own(styles,part))continue;const style=object(styles[part]);result.styles[part]={color:color(style.color),pattern:['plain','stripes','dots','flowers','check'].includes(style.pattern)?style.pattern:'plain',ribbon:style.ribbon===true};}
+    for(const part of parts){if(!own(styles,part))continue;const style=object(styles[part]);result.styles[part]={color:color(style.color),pattern:['plain','stripes','dots','flowers','check'].includes(style.pattern)?style.pattern:'plain',ribbon:style.ribbon===true,...(color(style.ribbonColor)?{ribbonColor:color(style.ribbonColor)}:{}),...(color(style.patternColor)?{patternColor:color(style.patternColor)}:{})};}
     return result;
   }
   function cleanLook(value){
     const input=object(value),look={};
-    for(const key of ['hair','dress','accessory','shoes'])if(allowed(key).has(input[key]))look[key]=input[key];
-    for(const key of ['hairColor','dressColor']){const picked=color(input[key]);if(picked)look[key]=picked;}
+    for(const key of ['hair','dress','accessory','shoes','necklace','ring','bracelet'])if(allowed(key).has(input[key]))look[key]=input[key];
+    for(const key of ['hairColor','dressColor','dressAccentColor','hairRibbonColor','accessoryColor','shoeColor','necklaceColor','ringColor','braceletColor','necklaceMetalColor','ringMetalColor','braceletMetalColor']){const picked=color(input[key]);if(picked)look[key]=picked;}
     if(own(input,'casual'))look.casual=cleanCasual(input.casual);
     if(own(input,'makeup')){const makeup=object(input.makeup);look.makeup={blush:color(makeup.blush),lip:color(makeup.lip)};}
     if(own(input,'nails')){const nails=object(input.nails);look.nails={};for(const mode of ['hands','feet'])look.nails[mode]=Array.from({length:10},(_,i)=>color(Array.isArray(nails[mode])?nails[mode][i]:null));}
