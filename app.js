@@ -44,11 +44,15 @@
   const CATEGORIES = [{id:'dress',label:'ドレス'},{id:'shoes',label:'くつ'},{id:'hair',label:'かみのけ'},{id:'accessory',label:'アクセサリー'},{id:'background',label:'おでかけ'},{id:'makeup',label:'おけしょう'},{id:'stickers',label:'シール'}];
   const TITLES = {dress:'どれに する？',hair:'かみがたを えらぼう',accessory:'きらり、かざろう',shoes:'どの くつを はこう？',background:'どこにお出かけしようかな？',makeup:'おけしょうの じかん',stickers:'ぺたん、と かざろう'};
   const STICKERS = [{id:'flower',label:'おはな'},{id:'star',label:'おほしさま'},{id:'butterfly',label:'ちょうちょ'},{id:'ribbon',label:'リボン'},{id:'heart',label:'ハート'},{id:'gem',label:'ほうせき'}];
+  const MAX_STICKERS = 100;
+  const STICKER_SIZES = [{id:'small',label:'ちいさい',scale:.65},{id:'medium',label:'ふつう',scale:1.05},{id:'large',label:'おおきい',scale:1.65}];
+  function stickerSize(value) {return Number.isFinite(value)?Math.max(.65,Math.min(1.65,value)):1.05;}
   const FALLBACK_CARDS = {dress:[{id:'ball',label:'ふんわり',colors:['#e7a5bb','#b5b4df','#a4cbd0']},{id:'flower',label:'おはな',colors:['#f0c5a0','#b0cbaa','#d9a9bf']},{id:'fairy',label:'ようせい',colors:['#b6cfae','#d2b5de','#a4d8d2']},{id:'moon',label:'おつきさま',colors:['#bec4e3','#e7c48e','#e5b7ca']},{id:'rose',label:'ばら',colors:['#dca1b4','#e7bb9f','#c9b6dd']},{id:'rainbow',label:'にじ',colors:['#e9b7c9','#c4bfe3','#b6d1cb']}],hair:[{id:'long',label:'さらさら'},{id:'braid',label:'みつあみ'},{id:'bob',label:'ふわり'}],accessory:[{id:'crown',label:'ティアラ'},{id:'bow',label:'リボン'},{id:'flowers',label:'おはな'},{id:'star',label:'おほしさま'}],background:[{id:'garden',label:'おにわ'},{id:'palace',label:'おしろ'},{id:'sky',label:'おそら'}]};
   FALLBACK_CARDS.face=[{id:'gentle',label:'やさしい おかお'},{id:'smile',label:'にっこり'},{id:'sparkle',label:'きらきら'},{id:'rosy',label:'まんまる'}];
   let state = loadDesign(), history = [], category = 'dress', page = 0, makeupPart = null;
   let photo = null, photoDraft = null, cameraStream = null, cameraSession = 0, modalCleanup = null, modalAfterClose = null, audioContext = null, voiceAudio = null, voiceCleanup = null, toastTimer;
   let nailMode = 'hands', footSide=null, selectedNail = -1, polish = POLISHES[0], started = false, selectedSticker = 'flower';
+  let selectedStickerSize = 'medium', stickerTool = 'place';
   let casualPart='top',casualPreviewSerial=0;
   let hairStep='base',hairRenderedSelection=null,outingRegion=null,outingRenderedScene=null;
   const hairRemembered=new Map();
@@ -74,7 +78,7 @@
       if(result.faceStudioEnabled&&book&&!s.friendId&&s.faceOptions?.enabled){member=book.create(s.faceOptions);book.rememberLook(member.id,s);try{localStorage.setItem(STORAGE,JSON.stringify({...s,friendId:member.id}));}catch{}}
       if(!member)member=book?.get('cast-gentle')||{id:'cast-gentle',face:'gentle'};identity(result,member);
       result.sound = s.sound !== false;result.bgm=s.bgm!==false; result.unlocked = s.unlocked === true;
-      result.stickers = Array.isArray(s.stickers)?s.stickers.filter(x=>x&&['flower','star','butterfly','ribbon','heart','gem'].includes(x.id)&&Number.isFinite(x.x)&&Number.isFinite(x.y)).slice(0,24).map(x=>({...x,color:safeColor(x.color)})):[];
+      result.stickers = Array.isArray(s.stickers)?s.stickers.filter(x=>x&&['flower','star','butterfly','ribbon','heart','gem'].includes(x.id)&&Number.isFinite(x.x)&&Number.isFinite(x.y)).slice(0,MAX_STICKERS).map(x=>({...x,color:safeColor(x.color),size:stickerSize(x.size)})):[];
       return result;
     } catch { const result=clone(DEFAULT);result.casual=normalizeCasual();return result; }
   }
@@ -246,6 +250,7 @@
     const categories=CATEGORIES.filter(c=>c.id!=='shoes'||state.mode==='princess');
     $('#categories').innerHTML=categories.map(c=>`<button class="category ${category===c.id?'active':''}" data-category="${c.id}" aria-label="${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}${c.id==='makeup'&&!state.unlocked?'、できたを おすと ひらく':''}" aria-pressed="${category===c.id}"><span class="category-icon">${c.id==='dress'&&state.mode==='casual'?casualModeIcon():categoryVisual(c.id)}</span><span class="category-label">${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}</span>${c.id==='makeup'&&!state.unlocked?`<span class="lock-dot">${icon('lock')}</span>`:''}</button>`).join('');
   }
+  function syncBallroom(){window.PrincessBallroom?.update(started&&effectiveBackground()==='ballroom'&&category!=='stickers'&&category!=='makeup',state.mode);}
   function renderDoll() {
     const options={...state,background:effectiveBackground(),accessory:effectiveAccessory(),transparentBackground:true,photoUrl:photo?.url||null,hairFit:photo?.hairFit,gardenImageDataUrl:assets().garden||undefined};
     const markup=art()?.render?.(options);
@@ -255,6 +260,7 @@
     else if(scene!=='garden'&&art()?.renderBackground){$('#stage').style.backgroundImage=`url("data:image/svg+xml,${encodeURIComponent(art().renderBackground({background:scene}))}")`;}else $('#stage').style.backgroundImage='';
     injectPhoto($('#doll'));
     addStickers($('#doll>svg'));
+    syncBallroom();
     if(!started&&$('#startPrincess'))$('#startPrincess').innerHTML=$('#doll').innerHTML;
     if(category==='makeup'&&makeupPart)syncMakeupPortrait();
   }
@@ -263,7 +269,7 @@
     const matrix=svg.getScreenCTM().inverse(),r=stage.getBoundingClientRect(),point=svg.createSVGPoint();point.x=r.left;point.y=r.top;const a=point.matrixTransform(matrix);point.x=r.right;point.y=r.bottom;const b=point.matrixTransform(matrix);return {x:a.x,y:a.y,width:b.x-a.x,height:b.y-a.y};
   }
   function addStickers(svg,bounds=stageBounds()) {
-    if(svg&&state.stickers.length){const layer=document.createElementNS('http://www.w3.org/2000/svg','g');layer.setAttribute('class','sticker-layer');layer.innerHTML=state.stickers.map((s,index)=>{const x=Number.isFinite(s.nx)?bounds.x+s.nx*bounds.width:s.x,y=Number.isFinite(s.ny)?bounds.y+s.ny*bounds.height:s.y;return `<g data-sticker-index="${index}" transform="translate(${x} ${y}) scale(1.05)">${stickerDrawing(s.id,s.color)}</g>`;}).join('');svg.append(layer);}
+    if(svg&&state.stickers.length){const layer=document.createElementNS('http://www.w3.org/2000/svg','g');layer.setAttribute('class','sticker-layer');layer.innerHTML=state.stickers.map((s,index)=>{const x=Number.isFinite(s.nx)?bounds.x+s.nx*bounds.width:s.x,y=Number.isFinite(s.ny)?bounds.y+s.ny*bounds.height:s.y,size=stickerSize(s.size);return `<g data-sticker-index="${index}" data-sticker-size="${size}" transform="translate(${x} ${y}) scale(${size})">${stickerDrawing(s.id,s.color)}</g>`;}).join('');svg.append(layer);}
   }
   function sceneMarkup(bounds=stageBounds()) {
     const container=document.createElement('div'),background=art().renderBackground({background:effectiveBackground(),gardenImageDataUrl:assets().garden||undefined});
@@ -298,14 +304,16 @@
     applyPhotoTone(slot,p);
   }
   function renderCloset() {
+    syncBallroom();
     if(category!=='makeup')hideMakeupPortrait();
     $('#closetBody').classList.toggle('makeup-shelf',category==='makeup');
     renderCategories(); $('#categoryTitle').textContent=TITLES[category];
-    $('#wardrobeHint').textContent=category==='makeup'?(state.unlocked?'すきな いろで おめかし':'できた！で ひらくよ'):category==='stickers'?'タッチで ぺたん。もういちど タッチで はがせるよ':'すきな えを タッチ';
+    $('#wardrobeHint').textContent=category==='makeup'?(state.unlocked?'すきな いろで おめかし':'できた！で ひらくよ'):category==='stickers'?(stickerTool==='resize'?'おおきさを えらんで、はった シールを タッチ':'タッチで ぺたん。もういちどで はがせるよ'):'すきな えを タッチ';
     const body=$('#closetBody');
     body.classList.toggle('outing-shelf',category==='background'&&!!window.PrincessOuting);
     body.classList.toggle('hair-shelf',category==='hair');body.classList.toggle('extra-shelf',category==='accessory'||category==='shoes');
     body.classList.toggle('trinket-shelf',category==='accessory'||category==='shoes'||category==='stickers');
+    body.classList.toggle('sticker-shelf',category==='stickers');
     body.classList.toggle('casual-shelf',category==='dress'&&state.mode==='casual');
     if(category==='dress'&&state.mode==='casual'){renderCasual(body);return;}
     if(category==='makeup'){renderMakeup(body);return;}
@@ -315,11 +323,18 @@
     if(category==='shoes'&&window.PrincessExtras){
       const ex=window.PrincessExtras;body.innerHTML='<div class="cards trinket-shoes">'+ex.cards.shoes.map(item=>`<button class="choice ${state.shoes===item.id?'selected':''}" data-extra-choice="${item.id}" aria-label="${escapeAttr(item.label)}" aria-pressed="${state.shoes===item.id}"><span class="choice-art">${ex.card('shoes',item.id,state)}</span>${state.shoes===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')+'</div>'+window.PrincessTrays.dyeButton('shoes');return;
     }
-    if(category==='stickers'){body.innerHTML=`<div class="sticker-cards">${STICKERS.map(s=>`<button class="choice ${selectedSticker===s.id?'selected':''}" data-sticker="${s.id}" aria-label="${s.label}" aria-pressed="${selectedSticker===s.id}"><span class="choice-art">${stickerCard(s.id,state.stickerColors[s.id])}</span>${selectedSticker===s.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`+window.PrincessTrays.dyeButton('stickers');return;}
+    if(category==='stickers'){renderStickerShelf(body);return;}
     const items=cardItems(category), perPage=items.length>4?3:4, pages=Math.ceil(items.length/perPage);page=Math.min(page,pages-1);
     const selectedValue=category==='background'?effectiveBackground():state[category];
     const shown=items.slice(page*perPage,page*perPage+perPage);
     body.innerHTML=`<div class="cards">${shown.map(item=>{const representative=category==='dress'&&item.id!==state.dress?representativeColor(item):state.dressColor;return `<button class="choice ${selectedValue===item.id?'selected':''}" data-choice="${item.id}" aria-label="${escapeAttr(item.label||item.name||item.title||item.id)}" aria-pressed="${selectedValue===item.id}"><span class="choice-art">${art()?.card?.(category,item.id,{...state,color:representative,dressColor:representative})||icon(category)}</span><span class="card-name">${item.label||item.name||item.title||''}</span>${selectedValue===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`;}).join('')}${pages>1?`<button class="choice next-card" data-page="${page+1>=pages?-page:1}" aria-label="つぎの ドレス"><span class="next-card-icon">${icon('chevron-right')}</span><span class="card-name">つぎの ドレス</span><span class="next-card-dots">${Array.from({length:pages},(_,i)=>`<i class="${i===page?'current':''}"></i>`).join('')}</span></button>`:''}</div>${category==='dress'?colorsMarkup(dressColors(),state.dressColor,'dress'):''}`;
+  }
+  function renderStickerShelf(body) {
+    const colour=state.stickerColors[selectedSticker];
+    body.innerHTML=`<div class="sticker-cards">${STICKERS.map(s=>`<button class="choice ${selectedSticker===s.id?'selected':''}" data-sticker="${s.id}" aria-label="${s.label}" aria-pressed="${selectedSticker===s.id}"><span class="choice-art">${stickerCard(s.id,state.stickerColors[s.id])}</span>${selectedSticker===s.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>
+      <div class="sticker-size-picker" role="group" aria-label="シールの おおきさ">${STICKER_SIZES.map(size=>`<button data-sticker-size="${size.id}" aria-label="${size.label} シール" aria-pressed="${selectedStickerSize===size.id}"><span class="sticker-size-picture" style="--sticker-preview-size:${Math.round(size.scale*22)}px">${stickerCard(selectedSticker,colour)}</span><span>${size.label}</span></button>`).join('')}</div>
+      <div class="sticker-tools"><button data-sticker-tool="place" aria-pressed="${stickerTool==='place'}">${icon('star')}<span>ぺたん・はがす</span></button><button data-sticker-tool="resize" aria-pressed="${stickerTool==='resize'}">${icon('zoom-in')}<span>おおきさ</span></button>${window.PrincessTrays.dyeButton('stickers')}</div>
+      <span class="sticker-count" aria-label="はった シール ${state.stickers.length}まい、${MAX_STICKERS}まいまで">${state.stickers.length} / ${MAX_STICKERS}</span>`;
   }
   function dressColors() {
     const item=cardItems('dress').find(x=>x.id===state.dress);
@@ -485,6 +500,7 @@
   function setCategory(cat) { category=cat;if(cat==='background'&&outingRenderedScene!==effectiveBackground())outingRegion=null;if(cat==='hair')hairStep='base';page=selectedPage(cat);makeupPart=null;renderCloset();renderStageLabel();speak(cat==='hair'?'hairChooseBase':cat==='accessory'?'jewelAccessory':cat==='makeup'&&!state.unlocked?'locked':cat==='dress'&&state.mode==='casual'?'casualMode':cat==='stickers'?'stickerHow':cat);effect();if(cat==='background'&&$('#closetBody').dataset.outingCompact==='true')openOutingMap(); }
 
   function openModal(markup, extraClass='', afterClose=null) {
+    window.PrincessBallroom?.cancel();
     hideMakeupPortrait(true);
     closeModal(false);const modal=$('#modal');modal.className='modal '+extraClass;modal.innerHTML=markup;$('#modalBackdrop').classList.remove('hidden');modalAfterClose=afterClose;
     const close=$('.modal-close',modal);if(close)close.focus({preventScroll:true});
@@ -798,7 +814,7 @@
   function beginParentHold(e) { if(e.button>0)return;clearParentHold();holdIndicator=document.createElement('span');holdIndicator.className='parent-hold-progress';const r=$('#parents').getBoundingClientRect();holdIndicator.style.cssText=`left:${r.left-3}px;top:${r.top-3}px`;document.body.append(holdIndicator);holdTimer=setTimeout(()=>{clearParentHold();openParents();},1200); }
   function clearParentHold(){clearTimeout(holdTimer);holdIndicator?.remove();holdIndicator=null;}
 
-  function beginPlay(mode){started=true;ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessMusic?.start();window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{window.PrincessMusic?.setSleeping(true);stopCamera();stopVoice();},onWake:()=>window.PrincessMusic?.setSleeping(false)});}
+  function beginPlay(mode){started=true;ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessMusic?.start();window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{window.PrincessBallroom?.cancel();window.PrincessMusic?.setSleeping(true);stopCamera();stopVoice();},onWake:()=>window.PrincessMusic?.setSleeping(false)});}
   $('#start').addEventListener('click',()=>beginPlay('princess'));
   $('#startCasual')?.addEventListener('click',()=>beginPlay('casual'));
   $('#undo').addEventListener('click',()=>{if(!history.length)return;const preferences={unlocked:state.unlocked,sound:state.sound,bgm:state.bgm,faceStudioEnabled:state.faceStudioEnabled},past=history.pop();window.PrincessFriendBook?.rememberLook(state.friendId,state);state={...past.design,...preferences};photo=past.photo?{...past.photo}:null;if(!state.faceStudioEnabled&&state.friendId!=='cast-gentle')swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderCloset();renderHeader();effect();});
@@ -823,7 +839,9 @@
     const extra=e.target.closest('[data-extra-choice]');if(extra){change(()=>state[category]=extra.dataset.extraChoice);speakNamedChoice(category,extra.dataset.extraChoice);return;}
     const choice=e.target.closest('[data-choice]');if(choice){change(()=>{if(category==='background'&&state.mode==='casual')state.casual.background=choice.dataset.choice;else state[category]=choice.dataset.choice;if(category==='dress'){const item=cardItems('dress').find(x=>x.id===state.dress);state.dressColor=representativeColor(item);}});if(category==='hair'){hairRemembered.set(currentHairFamily().id,state.hair);speakHairChoice(state.hair);}if(category==='background')speakNamedChoice('background',choice.dataset.choice);if(category==='dress'){const guide=assets().dressGuide?.[state.dress];speak(guide?.voiceKey||'dress',guide?.label);}return;}
     const p=e.target.closest('[data-page]');if(p){page+=Number(p.dataset.page);renderCloset();effect();return;}
-    const sticker=e.target.closest('[data-sticker]');if(sticker){selectedSticker=sticker.dataset.sticker;renderCloset();effect();speakNamedChoice('sticker',sticker.dataset.sticker);return;}
+    const sticker=e.target.closest('[data-sticker]');if(sticker){selectedSticker=sticker.dataset.sticker;stickerTool='place';renderCloset();effect();speakNamedChoice('sticker',sticker.dataset.sticker);return;}
+    const stickerSizeButton=e.target.closest('[data-sticker-size]');if(stickerSizeButton){if(STICKER_SIZES.some(size=>size.id===stickerSizeButton.dataset.stickerSize))selectedStickerSize=stickerSizeButton.dataset.stickerSize;renderCloset();effect();return;}
+    const stickerToolButton=e.target.closest('[data-sticker-tool]');if(stickerToolButton){stickerTool=stickerToolButton.dataset.stickerTool==='resize'?'resize':'place';renderCloset();effect();return;}
     const color=e.target.closest('[data-color]');if(color){chooseColor(color);return;}
     const makeupBook=e.target.closest('[data-makeup-colour-book]');if(makeupBook){openMakeupColourBook(makeupBook.dataset.makeupColourBook);return;}
     const m=e.target.closest('[data-makeup]');if(m){if(m.dataset.makeup==='hands'||m.dataset.makeup==='feet'){openNails(m.dataset.makeup);return;}makeupPart=m.dataset.makeup;makeupFullView=false;renderCloset();speak(makeupPart==='blush'?'cheekPlay':'lipPlay');return;}
@@ -841,11 +859,17 @@
   $('#stage').addEventListener('click',e=>{
     if(category!=='stickers'||e.target.closest('button'))return;
     const hit=stickerAtPoint(e.clientX,e.clientY);
+    const size=STICKER_SIZES.find(item=>item.id===selectedStickerSize).scale;
+    if(stickerTool==='resize'){
+      if(hit<0||hit>=state.stickers.length){toast('おおきさを かえたい シールを タッチしてね');return;}
+      if(stickerSize(state.stickers[hit].size)!==size)change(()=>state.stickers[hit].size=size,{sparkle:false});
+      toast('シールの おおきさが かわったよ');return;
+    }
     if(hit>=0&&hit<state.stickers.length){change(()=>state.stickers.splice(hit,1),{sparkle:false});speak('stickerPeel');toast('シールが はがれたよ');return;}
-    if(state.stickers.length>=24){toast('はった シールを タッチして はがしてね');return;}
+    if(state.stickers.length>=MAX_STICKERS){toast('100まい はれたね！ はった シールを タッチすると はがせるよ');return;}
     const svg=$('#doll>svg');if(!svg)return;const point=svg.createSVGPoint();point.x=e.clientX;point.y=e.clientY;
     const matrix=svg.getScreenCTM();if(!matrix)return;const p=point.matrixTransform(matrix.inverse()),r=$('#stage').getBoundingClientRect();
-    change(()=>state.stickers.push({id:selectedSticker,color:state.stickerColors[selectedSticker]||null,x:Math.round(p.x),y:Math.round(p.y),nx:(e.clientX-r.left)/r.width,ny:(e.clientY-r.top)/r.height}),{sparkle:false});
+    change(()=>state.stickers.push({id:selectedSticker,color:state.stickerColors[selectedSticker]||null,size,x:Math.round(p.x),y:Math.round(p.y),nx:(e.clientX-r.left)/r.width,ny:(e.clientY-r.top)/r.height}),{sparkle:false});
   });
   function chooseColor(button) {
     const color=button.dataset.color==='clear'?null:button.dataset.color,kind=button.dataset.colorKind;
@@ -905,7 +929,8 @@
   window.PrincessColourBook?.configure({groups:paletteGroups,speak,icon,effect});
   window.PrincessMusic?.configure({
     track:()=>{
-      const region=window.PrincessOuting?.regionFor(effectiveBackground());
+      const scene=effectiveBackground();if(scene==='ballroom')return 'ballroom';
+      const region=window.PrincessOuting?.regionFor(scene);
       if(region==='amusement')return 'park';
       if(region==='aquarium')return 'aquarium';
       return 'atelier';

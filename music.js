@@ -177,6 +177,11 @@
     if(playing)resumeContext();
     startNative();
   }
+  function getPlayhead(key){
+    if(key!==track||!playing||!wanted()||transitionTimer!==null||blocked)return null;
+    if(backend==='buffer')return bufferNode&&context.state==='running'?(offset+Math.max(0,context.currentTime-bufferStartedAt))%buffer.duration:null;
+    return !audio.paused&&Number.isFinite(audio.currentTime)?audio.currentTime:null;
+  }
   function voiceStart(){
     activeVoice=++voiceSerial;
     // Some iOS versions ignore element.volume. The quiet master is muted during speech.
@@ -203,7 +208,7 @@
     start(options={}){config={...config,...options};started=true;sync({gesture:true});},
     sync,
     setSleeping(value){sleeping=!!value;sync({gesture:!sleeping});},
-    voiceStart,voiceEnd,
+    voiceStart,voiceEnd,getPlayhead,
     getState(){return {started,sleeping,visible:visible(),enabled:read('enabled',true)!==false,sound:read('sound',true)!==false,track,transitioning:transitionTimer!==null,backend,contextState:context?.state||null,playing,pending:pending||(backend==='buffer'&&!buffer&&!!loading),blocked,voiceActive:!!activeVoice,gain:currentGain(),targetGain:fade.to,playAttempts};}
   });
 })();
