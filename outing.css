@@ -58,3 +58,7 @@
 @media(orientation:portrait){.stage-label.has-outing-guide{left:115px;right:24px}}
 @media(max-height:700px) and (orientation:landscape){.stage-label.has-outing-guide{left:90px;right:15px}}
 @media(max-width:600px) and (orientation:portrait){.stage-label.has-outing-guide{left:79px;right:14px;top:12px}.stage-outing-guide{gap:6px;border-radius:14px;padding-right:8px}.stage-outing-picture{width:35px;height:31px;border-radius:9px}.stage-outing-copy strong{font-size:10px}.stage-outing-copy small{font-size:8px}}
+
+/* Let each castle or garden room occupy its painted bay, even on the smallest map. */
+:is([data-outing-region="castle"],[data-outing-region="garden"]) .outing-ride-zone{min-width:44px;min-height:44px}
+:is([data-outing-region="castle"],[data-outing-region="garden"]) .outing-ride-zone small{pointer-events:auto;font-size:clamp(9px,1.1vw,14px);padding:2px 4px}

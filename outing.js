@@ -4,13 +4,32 @@
   const specifications=[['garden','お花のお庭','tripGarden'],['palace','お茶のお部屋','tripPalace'],['sky','星のテラス','tripSky'],['room','おしたくのお部屋','tripRoom'],['park','公園','tripPark'],['town','町','tripTown'],['castle','お城','tripCastle'],['amusement','遊園地','tripAmusement'],['aquarium','水族館','tripAquarium'],['mountain','山','tripMountain'],['thicket','藪の小道','tripThicket'],['road','道路','tripRoad'],['sandbox','砂場','tripSandbox'],['playground','公園の遊具','tripPlayground'],['adventure','公園のアスレチック','tripAdventure'],['mall','ショッピングモール','tripMall'],['riverbank','河原','tripRiverbank'],['riverpark','河川敷','tripRiverpark'],['cinema','映画館','tripCinema'],['dolphin','イルカショー','tripDolphin'],['tank','水槽の前','tripTank'],['souvenir','水族館のおみやげ屋さん','tripSouvenir']];
   specifications.push(['ferris','観覧車','tripFerris'],['carousel','メリーゴーランド','tripCarousel'],['coaster','ジェットコースター','tripCoaster']);
   const readings={garden:'おはなの おにわ',palace:'おちゃの おへや',sky:'ほしの テラス',room:'おしたくの おへや',park:'こうえん',town:'まち',castle:'おしろ',amusement:'ゆうえんち',aquarium:'すいぞくかん',mountain:'やま',thicket:'やぶの こみち',road:'どうろ',sandbox:'すなば',playground:'こうえんの ゆうぐ',adventure:'こうえんの アスレチック',mall:'ショッピングモール',riverbank:'かわら',riverpark:'かせんじき',cinema:'えいがかん',dolphin:'イルカショー',tank:'すいそうの まえ',souvenir:'すいぞくかんの おみやげやさん',ferris:'かんらんしゃ',carousel:'メリーゴーランド',coaster:'ジェットコースター'};
+
+  const castleAreas={
+    'palace':{left:2.8,top:23.5,width:21.3,height:26.7,labelX:13.45,labelY:46.8},
+    'ballroom':{left:26.2,top:22.3,width:22.6,height:27.9,labelX:37.5,labelY:46.8},
+    'music-room':{left:50.8,top:23,width:22.5,height:27.2,labelX:62.05,labelY:46.8},
+    'sky':{left:76,top:23,width:21.9,height:27.2,labelX:86.95,labelY:46.8},
+    'rose-house':{left:2.7,top:54.8,width:20.8,height:32.2,labelX:12.5,labelY:89},
+    'castle-library':{left:26.1,top:54.8,width:19.2,height:32.4,labelX:36,labelY:89},
+    'castle':{left:48.3,top:54.8,width:20.6,height:32.5,labelX:59.7,labelY:89},
+    'great-hall':{left:72.2,top:54.8,width:25.2,height:32.3,labelX:84.8,labelY:89}
+  };
+  const gardenAreas={
+    'lily-pond':{left:6,top:14,width:40,height:32,labelX:26,labelY:46},
+    'butterfly-meadow':{left:54,top:6,width:41,height:39,labelX:74,labelY:45},
+    'garden':{left:5,top:51,width:40,height:40,labelX:25,labelY:91},
+    'berry-patch':{left:53,top:55,width:43,height:37,labelX:74,labelY:92}
+  };
+  const areaNodes=areas=>Object.entries(areas).map(([id,a])=>[id,a.left+a.width/2,a.top+a.height/2]);
   const regions={
     world:{label:'おでかけの ちず',nodes:[['mountain',16,15],['castle',48,15],['amusement',80,15],['riverbank',12,47],['garden',49,44],['park',80,44],['room',17,69],['town',48,69],['aquarium',81,69]]},
     aquarium:{label:'すいぞくかんの ちず',nodes:[['dolphin',23,26],['tank',76,27],['souvenir',64,70],['aquarium',17,73]]},
     amusement:{label:'ゆうえんちの ちず',nodes:[['ferris',23,22],['carousel',78,24],['coaster',74,63],['amusement',21,70]]},
     park:{label:'こうえんの ちず',nodes:[['sandbox',22,27],['playground',76,24],['adventure',74,60],['park',21,80]]},
     town:{label:'まちの ちず',nodes:[['road',19,17],['mall',81,21],['cinema',81,66],['town',19,67]]},
-    castle:{label:'おしろの ちず',nodes:[['palace',22,30],['sky',82,30],['castle',47,72]]},
+    castle:{label:'おしろの ちず',nodes:areaNodes(castleAreas)},
+    garden:{label:'おはなの にわの ちず',nodes:areaNodes(gardenAreas)},
     mountain:{label:'やまの ちず',nodes:[['thicket',77,29],['mountain',25,58]]},
     river:{label:'かわの ちず',nodes:[['riverbank',22,36],['riverpark',72,63]]}
   };
@@ -23,11 +42,11 @@
   };
   const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const assets=()=>window.PrincessAssets||{};
-  function entries(){return specifications.map(([id,label,voiceKey])=>({...assets().outings?.[id],id,label:assets().outings?.[id]?.label||label,reading:assets().outings?.[id]?.reading||readings[id]||label,voiceKey:assets().outings?.[id]?.voiceKey||voiceKey,src:assets().outings?.[id]?.src||assets().scenes?.[id]||null}));}
+  function entries(){const rooms=Object.entries(assets().outings||{}).filter(([,item])=>item.region).map(([id,r])=>[id,r.label,r.voiceKey]);return [...specifications,...rooms].map(([id,label,voiceKey])=>({...assets().outings?.[id],id,label:assets().outings?.[id]?.label||label,reading:assets().outings?.[id]?.reading||readings[id]||label,voiceKey:assets().outings?.[id]?.voiceKey||voiceKey,src:assets().outings?.[id]?.src||assets().scenes?.[id]||null}));}
   function get(id){return entries().find(item=>item.id===id)||null;}
-  function destination(id,region){const item=get(id);if(!item)return null;if(region==='amusement'&&id==='amusement')return {...item,label:'遊園地の入口',reading:'ゆうえんちの いりぐち'};if(region==='aquarium'&&id==='aquarium')return {...item,label:'水族館の入口',reading:'すいぞくかんの いりぐち'};return item;}
+  function destination(id,region){const item=get(id);if(!item)return null;if(region==='castle'&&id==='castle')return {...item,label:'お城の入口',reading:'おしろの いりぐち'};if(region==='garden'&&id==='garden')return {...item,label:'お庭の入口',reading:'おにわの いりぐち'};if(region==='amusement'&&id==='amusement')return {...item,label:'遊園地の入口',reading:'ゆうえんちの いりぐち'};if(region==='aquarium'&&id==='aquarium')return {...item,label:'水族館の入口',reading:'すいぞくかんの いりぐち'};return item;}
   function distinctReading(item){const reading=String(item?.reading||''),label=String(item?.label||'');return reading.replace(/\s/g,'')!==label.replace(/\s/g,'')?reading:'';}
-  function regionFor(id){if(['amusement','ferris','carousel','coaster'].includes(id))return 'amusement';if(['aquarium','dolphin','tank','souvenir'].includes(id))return 'aquarium';if(['park','sandbox','playground','adventure'].includes(id))return 'park';if(['town','road','mall','cinema'].includes(id))return 'town';if(['castle','palace','sky'].includes(id))return 'castle';if(['mountain','thicket'].includes(id))return 'mountain';if(['riverbank','riverpark'].includes(id))return 'river';return 'world';}
+  function regionFor(id){if(id==='garden')return 'garden';if(assets().outings?.[id]?.region)return assets().outings[id].region;if(['amusement','ferris','carousel','coaster'].includes(id))return 'amusement';if(['aquarium','dolphin','tank','souvenir'].includes(id))return 'aquarium';if(['park','sandbox','playground','adventure'].includes(id))return 'park';if(['town','road','mall','cinema'].includes(id))return 'town';if(['castle','palace','sky'].includes(id))return 'castle';if(['mountain','thicket'].includes(id))return 'mountain';if(['riverbank','riverpark'].includes(id))return 'river';return 'world';}
   function parent(region){return region&&region!=='world'?'world':null;}
   const arrow='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="m27 9-15 15 15 15M13 24h24" fill="none" stroke="#94576d" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const expand='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M18 7H7v11m23-11h11v11M7 30v11h11m23-11v11H30" fill="none" stroke="#87596a" stroke-width="6" stroke-linecap="round"/><path d="m13 13 8 8m14-8-8 8M13 35l8-8m14 8-8-8" stroke="#87596a" stroke-width="4"/></svg>';
@@ -43,10 +62,12 @@
   function render({current='garden',region=regionFor(current),large=false,compact=false}={}){
     if(!regions[region])region='world';const local=regions[region],up=parent(region),map=assets().outingMaps?.[region],currentItem=destination(current,region);
     const reading=distinctReading(currentItem),location=currentItem?`<span class="outing-current-place"><span class="outing-location-pin" aria-hidden="true">●</span><strong>${esc(currentItem.label)}</strong></span>${reading?`<small class="outing-current-reading">${esc(reading)}</small>`:''}`:'';
-    if(compact)return `<section class="outing-workbench outing-compact"><button class="outing-open-map" data-outing-expand aria-label="${esc(local.label)}を ひらく"><span class="outing-compact-picture">${map?`<img src="${esc(map)}" alt="">`:mapIcon()}</span><span class="outing-open-magnifier">${expand}</span><span class="outing-compact-copy">${location}<span class="outing-open-label">ちずを ひらく</span></span></button></section>`;
-    const background=map?`<img class="outing-map-image" src="${esc(map)}" alt="">`:'<svg class="outing-map-image" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-hidden="true"><rect width="1000" height="750" fill="#e6e8c2"/><path d="M0 160q270 150 510-50t490 60M0 600q350-170 530-50t470-20" stroke="#b3cfb0" stroke-width="150" fill="none"/><path d="M50 670Q330 440 520 400T940 70" stroke="#eee0b6" stroke-width="56" fill="none"/><path d="M50 670Q330 440 520 400T940 70" stroke="#cbb585" stroke-width="3" stroke-dasharray="12 16" fill="none"/></svg>';
+    const mapSrc=region==='castle'&&map?.startsWith('assets/')?map+'?v=interior8':map;
+    if(compact)return `<section class="outing-workbench outing-compact"><button class="outing-open-map" data-outing-expand aria-label="${esc(local.label)}を ひらく"><span class="outing-compact-picture">${map?`<img src="${esc(mapSrc)}" alt="">`:mapIcon()}</span><span class="outing-open-magnifier">${expand}</span><span class="outing-compact-copy">${location}<span class="outing-open-label">ちずを ひらく</span></span></button></section>`;
+
+    const background=map?`<img class="outing-map-image" src="${esc(mapSrc)}" alt="">`:'<svg class="outing-map-image" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-hidden="true"><rect width="1000" height="750" fill="#e6e8c2"/><path d="M0 160q270 150 510-50t490 60M0 600q350-170 530-50t470-20" stroke="#b3cfb0" stroke-width="150" fill="none"/><path d="M50 670Q330 440 520 400T940 70" stroke="#eee0b6" stroke-width="56" fill="none"/><path d="M50 670Q330 440 520 400T940 70" stroke="#cbb585" stroke-width="3" stroke-dasharray="12 16" fill="none"/></svg>';
     const pins=local.nodes.map(([id,x,y])=>{
-      const item=destination(id,region),selected=id===current,label=item.label,area=map&&region==='amusement'?amusementAreas[id]:null;
+      const item=destination(id,region),selected=id===current,label=item.label,area=map&&({castle:castleAreas,garden:gardenAreas,amusement:amusementAreas}[region]?.[id]);
       const position=area?`left:${area.left}%;top:${area.top}%;width:${area.width}%;height:${area.height}%`:`left:${x}%;top:${y}%`;
       const caption=area?` style="left:${(area.labelX-area.left)/area.width*100}%;top:${(area.labelY-area.top)/area.height*100}%"`:'';
       return `<button class="outing-pin ${map?'outing-hotspot':''} ${area?'outing-ride-zone':''} ${selected?'selected':''}" style="${position}" data-outing-go="${id}" aria-label="${esc(label)}に いく" aria-pressed="${selected}" ${selected?'aria-current="location"':''}>${map?'':`<span class="outing-pin-picture">${item.src?`<img src="${esc(item.src)}" alt="">`:landmark(id)}</span>`}<small${caption}>${esc(label)}</small>${selected?`<i class="outing-pin-check">${check}</i>`:''}</button>`;
