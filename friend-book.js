@@ -25,7 +25,7 @@
   const copy=value=>JSON.parse(JSON.stringify(value));
   const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};
   const publicCopy=value=>value==null?null:freeze(copy(value));
-  const color=value=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value.toLowerCase():null;
+  const color=value=>typeof value==='string'&&value.length===7&&/^#[0-9a-f]{6}$/i.test(value)?value.toLowerCase():null;
   const integer=value=>Number.isSafeInteger(value)&&value>0;
   const empty=()=>({version:1,nextSequence:1,friends:[],looks:{}});
   let book=empty(),dirtyLooks=new Set(),suppressStored=false;
@@ -37,6 +37,9 @@
     if(Number.isInteger(input.skinShade)&&input.skinShade>=0&&input.skinShade<=44&&
        Number.isInteger(input.skinHue)&&input.skinHue>=0&&input.skinHue<=4){
       result.skinShade=input.skinShade;result.skinHue=input.skinHue;
+    }
+    for(const key of ['skinColor','irisColor']){
+      const hex=color(input[key]);if(hex)result[key]=hex;
     }
     return result;
   }

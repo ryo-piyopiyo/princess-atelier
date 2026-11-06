@@ -7,3 +7,12 @@
 .makeup-view-switch{right:36px;top:96px}.makeup-current-colour{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;flex:none;min-height:23px;line-height:1.35;color:#8d596d;padding:0 3px}.makeup-current-colour i{width:18px;height:18px;flex:none;border-radius:50%;background:var(--swatch);border:2px solid #fff;box-shadow:0 0 0 1px #cdaebb}.makeup-current-colour b{font-size:13px;font-weight:600}.makeup-current-colour small{font-size:10px;color:#a9828c;overflow-wrap:anywhere}.makeup-palette-scroll{overflow-x:hidden}.makeup-explore-grid{grid-template-columns:repeat(5,minmax(0,1fr));width:100%;column-gap:8px}.makeup-explore-grid .makeup-swatch{justify-self:center}
 @media(orientation:portrait){.makeup-palette-panel{grid-template-rows:55px 25px minmax(42px,1fr);gap:5px 8px}.makeup-palette-top{grid-row:1 / 4}.makeup-current-colour{grid-column:2;grid-row:2;justify-content:flex-start;flex-wrap:nowrap;min-height:22px;overflow:hidden}.makeup-current-colour b{font-size:11px;white-space:nowrap}.makeup-current-colour small{font-size:9px}.makeup-palette-scroll{grid-row:3;min-height:42px}.makeup-view-switch{right:36px;top:84px}}
 @media(max-height:700px) and (orientation:landscape){.makeup-view-switch{right:32px;top:84px}.makeup-current-colour{min-height:20px}.makeup-current-colour b{font-size:11px}.makeup-current-colour small{font-size:9px}}
+
+/* Keep the hue book available alongside the brush and the quick swatches. */
+.makeup-colour-name{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap}
+.makeup-more-colours{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:4px 11px;border:1px solid #d7b8a6;color:#7b5862;background:#fff7ef;border-radius:16px;font-size:12px;white-space:nowrap}
+.makeup-more-colours svg,.makeup-more-colours i{width:25px;height:25px;flex:none}
+.makeup-more-colours .brush-colour{border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #b99589}
+.nail-paint-tools{display:flex;align-items:center;justify-content:center;gap:12px;padding:3px}
+.nail-paint-tools .nail-notice{margin:0}
+@media(orientation:portrait){.makeup-palette-panel{grid-template-rows:55px 44px minmax(42px,1fr)}.makeup-current-colour{justify-content:space-between;gap:4px}.makeup-colour-name{justify-content:flex-start;line-height:1.15}.makeup-more-colours{font-size:11px;padding:3px 7px;gap:4px}}

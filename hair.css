@@ -39,3 +39,14 @@
   .hair-arranging .hair-context,.hair-arranging .hair-base-back{width:48px;min-width:48px}.hair-arranging .hair-back-preview{width:39px;height:48px}.hair-arranging .hair-back-label{font-size:7px}
   .hair-arranging .hair-browser{grid-template-columns:40px minmax(0,1fr) 40px;gap:4px}.hair-arranging .hair-page{width:40px;padding:9px}.hair-arranging .hair-page-mark{left:44px;right:44px}.hair-loose-badge{font-size:7px;padding:2px 4px}
 }
+
+/* Keep the book beside the natural swatches, even on a narrow shelf. */
+.hair-shelf .hair-palette { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; align-items: center; }
+.wardrobe .hair-shelf .hair-palette .colors { display: flex; width: 100%; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; align-items: center; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; gap: 5px; padding: 4px 3px; }
+.wardrobe .hair-shelf .hair-palette .color { flex: 1 0 40px; width: auto; min-width: 40px; max-width: 50px; height: 40px; min-height: 40px; }
+.hair-more-colours { min-height: 44px; min-width: 66px; display: inline-flex; align-items: center; justify-content: center; flex-direction: column; gap: 1px; padding: 2px 5px; border: 2px solid #cda6a2; border-radius: 15px; background: #fff5e5; }
+.hair-more-colours svg { width: 28px; height: 26px; }
+.hair-more-colours span { font-size: 10px; line-height: 1.2; white-space: nowrap; }
+@media (orientation: portrait) and (max-width: 600px) {
+  .hair-shelf.hair-arranging { grid-template-rows: minmax(0,1fr) 48px; }
+}

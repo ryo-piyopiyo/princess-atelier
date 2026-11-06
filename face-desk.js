@@ -35,7 +35,7 @@
     };
     function optionButtons(key,title,kind) {
       return '<div class="face-desk-group"><p>'+title+'</p><div class="face-desk-choices '+kind+'">'+fields[key].map(([value,name,voice,color])=>{
-        const selected=work[key]===value,opts={...work,[key]:value};let art='';
+        const selected=work[key]===value&&(key!=='iris'||!work.irisColor),opts={...work,[key]:value};let art='';
         if(kind==='iris-swatches')art='<i class="iris-dot" style="--color:'+color+'"></i>';
         else if(kind==='miniatures')art=picture(opts,key==='mouth'?'mouth':'eyes');
         else {
@@ -45,22 +45,29 @@
         return '<button type="button" data-desk-key="'+key+'" data-desk-value="'+value+'" aria-label="'+name+'" aria-pressed="'+selected+'"><span>'+art+'</span><small>'+name+'</small></button>';
       }).join('')+'</div></div>';
     }
-    const currentPreset=p=>Object.keys(p.options).every(k=>work[k]===p.options[k]);
+    const currentPreset=p=>!work.skinColor&&!work.irisColor&&Object.keys(p.options).every(k=>work[k]===p.options[k]);
+    const paintKey=part=>part==='skin'?'skinColor':'irisColor';
+    const currentPaint=part=>part==='skin'?studio.skinTarget(work):(work.irisColor||studio.irisPalette[work.iris]);
+    function moreColors(part){
+      const extra=work[paintKey(part)];
+      return '<div class="desk-paint-actions"><button type="button" data-desk-paint="'+part+'"><i class="desk-paint-book" aria-hidden="true"></i>もっと いろ</button>'+
+        (extra?'<button type="button" data-desk-reset-paint="'+part+'"><i class="skin-dot" style="--color:'+extra+'"></i>もとの みほんへ</button>':'')+'</div>';
+    }
     function skinPanel(){
       const dot=opts=>'<i class="skin-dot" style="--color:'+studio.skinTarget(opts)+'"></i>';
       const shades=Array.from({length:studio.lastShade/4+1},(_,index)=>{
         const shade=index*4,name='はだの あかるさ '+(index+1);
-        return '<button type="button" data-desk-shade="'+shade+'" aria-label="'+name+'" aria-pressed="'+(work.skinShade===shade)+'">'+dot({...work,skinShade:shade})+'</button>';
+        return '<button type="button" data-desk-shade="'+shade+'" aria-label="'+name+'" aria-pressed="'+(!work.skinColor&&work.skinShade===shade)+'">'+dot({...work,skinColor:undefined,skinShade:shade})+'</button>';
       }).join('');
-      const tones=hues.map((name,hue)=>'<button type="button" data-desk-hue="'+hue+'" aria-label="'+name+'の いろみ" aria-pressed="'+(work.skinHue===hue)+'">'+dot({...work,skinHue:hue})+'<small>'+name+'</small></button>').join('');
+      const tones=hues.map((name,hue)=>'<button type="button" data-desk-hue="'+hue+'" aria-label="'+name+'の いろみ" aria-pressed="'+(!work.skinColor&&work.skinHue===hue)+'">'+dot({...work,skinColor:undefined,skinHue:hue})+'<small>'+name+'</small></button>').join('');
       const step=(delta,label)=>'<button type="button" data-desk-step="'+delta+'" '+(work.skinShade+delta<0||work.skinShade+delta>studio.lastShade?'disabled':'')+'>'+label+'</button>';
       return '<div class="face-desk-group"><p>はだの あかるさ</p><div class="face-desk-choices skin-scale">'+shades+'</div><div class="skin-fine">'+step(-1,'少し あかるく')+'<span aria-label="いまの はだの いろ">'+dot(work)+'</span>'+step(1,'少し こく')+'</div></div>'+
         '<div class="face-desk-group"><p>いろみ</p><div class="face-desk-choices skin-hues">'+tones+'</div></div>';
     }
     function panel(){
       if(tab==='looks')return '<div class="face-desk-group"><p>えの みほん</p><div class="face-desk-presets">'+looks.map(p=>'<button type="button" data-desk-preset="'+p.id+'" aria-label="'+p.name+'" aria-pressed="'+currentPreset(p)+'"><span>'+picture(p.options)+'</span><small>'+p.name+'</small></button>').join('')+'</div></div>';
-      if(tab==='skin')return skinPanel();
-      if(tab==='iris')return optionButtons('iris','ひとみの いろ','iris-swatches');
+      if(tab==='skin')return moreColors('skin')+skinPanel();
+      if(tab==='iris')return moreColors('iris')+optionButtons('iris','ひとみの いろ','iris-swatches');
       if(tab==='eyes')return optionButtons('eyeShape','めの かたち','miniatures')+optionButtons('eyeHeight','めの たかさ','directions')+optionButtons('eyeSpacing','めの あいだ','directions');
       return optionButtons('mouth','くちの かたち','miniatures');
     }
@@ -72,19 +79,38 @@
     content.onclick=e=>{
       const b=e.target.closest('button');if(!b)return;
       let voice,selector;
-      if(b.dataset.deskTab){tab=b.dataset.deskTab;voice=tabs.find(row=>row[0]===tab)?.[2];selector='[data-desk-tab="'+tab+'"]';}
+      if(b.dataset.deskPaint){
+        const part=b.dataset.deskPaint,key=paintKey(part);
+        window.PrincessColourBook.open({
+          title:part==='skin'?'はだの いろ':'ひとみの いろ',
+          current:()=>currentPaint(part),preview:()=>picture(work,part==='iris'?'eyes':''),
+          onPick:hex=>{
+            const color=studio.normalizeColor(hex);if(!color)return;
+            work[key]=color;
+            const scroll=content.querySelector('.face-desk-panel').scrollTop;
+            content.innerHTML=main();content.querySelector('.face-desk-panel').scrollTop=scroll;
+          },
+          onClose:()=>content.querySelector('[data-desk-paint="'+part+'"]')?.focus?.({preventScroll:true})
+        });return;
+      }
+      if(b.dataset.deskResetPaint){
+        const part=b.dataset.deskResetPaint;delete work[paintKey(part)];selector='[data-desk-paint="'+part+'"]';
+      }
+      else if(b.dataset.deskTab){tab=b.dataset.deskTab;voice=tabs.find(row=>row[0]===tab)?.[2];selector='[data-desk-tab="'+tab+'"]';}
       else if(b.dataset.deskPreset){const entry=looks.find(p=>p.id===b.dataset.deskPreset);work={...entry.options};voice='faceLook'+entry.id[0].toUpperCase()+entry.id.slice(1);selector='[data-desk-preset="'+entry.id+'"]';}
       else if(b.hasAttribute('data-desk-shade')||b.hasAttribute('data-desk-step')){
+        delete work.skinColor;
         const fine=b.hasAttribute('data-desk-step');
         work.skinShade=fine?Math.min(studio.lastShade,Math.max(0,work.skinShade+Number(b.dataset.deskStep))):Number(b.dataset.deskShade);
         selector=fine?'[data-desk-step="'+b.dataset.deskStep+'"]':'[data-desk-shade="'+work.skinShade+'"]';
         voice=work.skinShade<14?'faceShadeLight':work.skinShade<30?'faceShadeMedium':'faceShadeDeep';
       }
       else if(b.hasAttribute('data-desk-hue')){
+        delete work.skinColor;
         work.skinHue=Number(b.dataset.deskHue);selector='[data-desk-hue="'+work.skinHue+'"]';
         voice=['faceToneCool','faceToneWarm','faceToneNeutral','faceToneWarm','faceToneNeutral'][work.skinHue];
       }
-      else if(b.dataset.deskKey){const key=b.dataset.deskKey,choice=fields[key].find(opt=>String(opt[0])===b.dataset.deskValue);if(!choice)return;work[key]=choice[0];voice=choice[2];selector='[data-desk-key="'+key+'"][data-desk-value="'+choice[0]+'"]';}
+      else if(b.dataset.deskKey){const key=b.dataset.deskKey,choice=fields[key].find(opt=>String(opt[0])===b.dataset.deskValue);if(!choice)return;if(key==='iris')delete work.irisColor;work[key]=choice[0];voice=choice[2];selector='[data-desk-key="'+key+'"][data-desk-value="'+choice[0]+'"]';}
       else return;
       const wasFocused=document.activeElement===b,scroll=content.querySelector('.face-desk-panel')?.scrollTop||0;content.innerHTML=main();if(!b.dataset.deskTab)content.querySelector('.face-desk-panel').scrollTop=scroll;if(wasFocused)content.querySelector(selector)?.focus({preventScroll:true});if(voice)say(voice);
     };

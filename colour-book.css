@@ -1,0 +1,9 @@
+.colour-book-layer { z-index: 36; }
+.colour-book { margin: 0; overscroll-behavior: contain; }
+.colour-book .colour-custom { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 3px 13px 3px 5px; border: 1px solid #dab8a8; border-radius: 18px; background: #fff5e9; color: #79584d; font-size: 13px; cursor: pointer; }
+.colour-book [data-colour-rgb] { width: 50px; height: 42px; cursor: pointer; border: 0; padding: 3px; border-radius: 12px; background: transparent; }
+.colour-book .colour-garment-preview { overflow: hidden; }
+@media (max-height: 540px) and (orientation: landscape) {
+  .colour-book { padding-top: 12px; }
+  .colour-book .colour-picker-column { gap: 8px; }
+}
