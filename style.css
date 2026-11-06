@@ -80,3 +80,4 @@
   .play-mode{width:58px;min-height:56px;height:56px;gap:1px;padding:3px;border-radius:16px}
   .play-mode-picture{width:31px;height:31px}.play-mode-label{font-size:9px}
 }
+.setting-hint{display:block;font-size:10px;line-height:1.4;color:#9b7862;margin-top:5px;max-width:230px}

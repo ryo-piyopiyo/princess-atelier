@@ -11,7 +11,7 @@
   let keepsakeSaveInFlight = false;
   const CASUAL_PARTS=[{id:'top',label:'トップス'},{id:'outer',label:'うわぎ'},{id:'bottom',label:'ボトムス'},{id:'socks',label:'くつした'},{id:'shoes',label:'くつ'}];
   const CASUAL_FALLBACK={top:'tee',outer:'none',bottom:'skirt',socks:'ankle',shoes:'sneakers',accessory:'none',background:'room',styles:{top:{color:'#dc9fb4',pattern:'plain',ribbon:false},outer:{color:'#a4c4b7',pattern:'plain',ribbon:false},bottom:{color:'#91abc8',pattern:'plain',ribbon:false},socks:{color:'#fff1df',pattern:'plain',ribbon:false},shoes:{color:'#cc9b80',pattern:'plain',ribbon:false}}};
-  const DEFAULT = {mode:'princess',casual:CASUAL_FALLBACK,dress:'ball',dressColor:'#ec9695',hair:'long',hairColor:'#865947',face:'gentle',friendId:'cast-gentle',faceStudioEnabled:false,faceOptions:{enabled:false},accessory:'crown',shoes:'ballet',background:'garden',makeup:{blush:null,lip:null},nails:{hands:Array(10).fill(null),feet:Array(10).fill(null)},stickers:[],unlocked:false,sound:true};
+  const DEFAULT = {mode:'princess',casual:CASUAL_FALLBACK,dress:'ball',dressColor:'#ec9695',hair:'long',hairColor:'#865947',face:'gentle',friendId:'cast-gentle',faceStudioEnabled:false,faceOptions:{enabled:false},accessory:'crown',shoes:'ballet',background:'garden',makeup:{blush:null,lip:null},nails:{hands:Array(10).fill(null),feet:Array(10).fill(null)},stickers:[],unlocked:false,sound:true,bgm:true};
   const POLISHES = ['#e99aa9','#c48ec1','#b8b3e0','#82b5df','#83c9c1','#e8bd72','#dc7778','#f6eee1'];
   const BLUSHES = ['#eb91a3','#eaa481','#dca0ba'];
   const LIPS = ['#d87d94','#c85f7f','#e39a83'];
@@ -47,7 +47,7 @@
   const FALLBACK_CARDS = {dress:[{id:'ball',label:'ふんわり',colors:['#e7a5bb','#b5b4df','#a4cbd0']},{id:'flower',label:'おはな',colors:['#f0c5a0','#b0cbaa','#d9a9bf']},{id:'fairy',label:'ようせい',colors:['#b6cfae','#d2b5de','#a4d8d2']},{id:'moon',label:'おつきさま',colors:['#bec4e3','#e7c48e','#e5b7ca']},{id:'rose',label:'ばら',colors:['#dca1b4','#e7bb9f','#c9b6dd']},{id:'rainbow',label:'にじ',colors:['#e9b7c9','#c4bfe3','#b6d1cb']}],hair:[{id:'long',label:'さらさら'},{id:'braid',label:'みつあみ'},{id:'bob',label:'ふわり'}],accessory:[{id:'crown',label:'ティアラ'},{id:'bow',label:'リボン'},{id:'flowers',label:'おはな'},{id:'star',label:'おほしさま'}],background:[{id:'garden',label:'おにわ'},{id:'palace',label:'おしろ'},{id:'sky',label:'おそら'}]};
   FALLBACK_CARDS.face=[{id:'gentle',label:'やさしい おかお'},{id:'smile',label:'にっこり'},{id:'sparkle',label:'きらきら'},{id:'rosy',label:'まんまる'}];
   let state = loadDesign(), history = [], category = 'dress', page = 0, makeupPart = null;
-  let photo = null, photoDraft = null, cameraStream = null, cameraSession = 0, modalCleanup = null, modalAfterClose = null, audioContext = null, voiceAudio = null, toastTimer;
+  let photo = null, photoDraft = null, cameraStream = null, cameraSession = 0, modalCleanup = null, modalAfterClose = null, audioContext = null, voiceAudio = null, voiceCleanup = null, toastTimer;
   let nailMode = 'hands', footSide=null, selectedNail = -1, polish = POLISHES[0], started = false, selectedSticker = 'flower', accessoryShelf='accessory';
   let casualPart='top',casualPreviewSerial=0,paletteTarget='dress',paletteGroup=0;
   let hairStep='base',hairRenderedSelection=null,outingRegion=null,outingRenderedScene=null;
@@ -71,7 +71,7 @@
       let member=result.faceStudioEnabled&&book?book.get(s.friendId||('cast-'+s.face)):null;
       if(result.faceStudioEnabled&&book&&!s.friendId&&s.faceOptions?.enabled){member=book.create(s.faceOptions);book.rememberLook(member.id,s);try{localStorage.setItem(STORAGE,JSON.stringify({...s,friendId:member.id}));}catch{}}
       if(!member)member=book?.get('cast-gentle')||{id:'cast-gentle',face:'gentle'};identity(result,member);
-      result.sound = s.sound !== false; result.unlocked = s.unlocked === true;
+      result.sound = s.sound !== false;result.bgm=s.bgm!==false; result.unlocked = s.unlocked === true;
       result.stickers = Array.isArray(s.stickers)?s.stickers.filter(x=>x&&['flower','star','butterfly','ribbon','heart','gem'].includes(x.id)&&Number.isFinite(x.x)&&Number.isFinite(x.y)).slice(0,24):[];
       return result;
     } catch { const result=clone(DEFAULT);result.casual=normalizeCasual();return result; }
@@ -206,6 +206,7 @@
     if(enabled){$('.friend-book-icon',shelf).innerHTML='<svg width="38" height="36" viewBox="0 0 56 48" aria-hidden="true"><path d="M4 9q14-5 24 3 10-8 24-3v29q-14-5-24 3-11-8-24-3z" fill="#fbf2d7" stroke="#a47c65" stroke-width="2.6"/><path d="M28 12v27" fill="none" stroke="#c7a184" stroke-width="2"/><g fill="#deb39a" stroke="#916753" stroke-width="1.4"><circle cx="16" cy="21" r="6"/><circle cx="40" cy="21" r="6"/></g><path d="M8 34q8-15 16-1m8 0q8-15 16 0" fill="#d6a9b9" stroke="#af8293" stroke-width="1.5"/></svg>';const current=window.PrincessFriendBook.get(state.friendId);$('#friendName').textContent=!photo&&current?current.name+'と おしたく':'';}else $('#friendName').textContent='';
     renderPlayModes();
     renderStageLabel();
+    window.PrincessMusic?.sync();
   }
   function renderStageLabel(){
     const label=$('#stageLabel'),provider=window.PrincessOuting,current=effectiveBackground(),place=category==='background'?provider?.destination?.(current,provider.regionFor(current)):null,guide=state.mode==='princess'?assets().dressGuide?.[state.dress]:null;
@@ -386,13 +387,18 @@
     if(!state.sound||!started)return;ensureAudio();if(!audioContext)return;
     try{const now=audioContext.currentTime;const notes=kind==='done'?[523.25,659.25,783.99,1046.5]:[660,880];notes.forEach((n,i)=>{const osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.type='sine';osc.frequency.value=n;gain.gain.setValueAtTime(0,now+i*.075);gain.gain.linearRampToValueAtTime(.055,now+i*.075+.012);gain.gain.exponentialRampToValueAtTime(.001,now+i*.075+.2);osc.connect(gain);gain.connect(audioContext.destination);osc.start(now+i*.075);osc.stop(now+i*.075+.22);});}catch{}
   }
-  function stopVoice() { voiceAudio?.pause(); }
+  function stopVoice() {voiceCleanup?.();voiceCleanup=null;voiceAudio?.pause();}
   function speak(key, text) {
     if(!state.sound||!started)return;stopVoice();
     const phrase=text||SPEECH[key]||key;
     const normalize=s=>String(s).replace(/[\s、。！？!?・]/g,''),recordedKey=assets().voices?.[key]?key:assets().phraseKeys?.[normalize(phrase)],recording=assets().voices?.[recordedKey];
     if(recording){
-      const audio=voiceAudio ||= document.getElementById('maoVoice')||new Audio();audio.src=recording;audio.volume=.85;audio.play().catch(()=>{});
+      const audio=voiceAudio ||= document.getElementById('maoVoice')||new Audio();audio.src=recording;audio.volume=.85;
+      const token=window.PrincessMusic?.voiceStart();let live=true;
+      const finish=()=>{if(!live)return;live=false;for(const type of ['ended','error','pause'])audio.removeEventListener(type,onStop);window.PrincessMusic?.voiceEnd(token);if(voiceCleanup===finish)voiceCleanup=null;};
+      const onStop=()=>{if(audio.ended||audio.error||audio.paused)finish();};
+      voiceCleanup=finish;for(const type of ['ended','error','pause'])audio.addEventListener(type,onStop);
+      try{audio.play()?.catch(finish);}catch{finish();}
     }
   }
   function selectedPage(cat){if(cat==='hair')return Math.max(0,Math.floor(hairFamilyItems().findIndex(item=>item.id===state.hair)/hairPerPage()));if(cat==='dress'&&state.mode==='casual'){const items=casualItems(casualPart);return Math.max(0,Math.floor(items.findIndex(x=>x.id===state.casual[casualPart])/(items.length>4?3:4)));}return cat==='dress'?Math.max(0,Math.floor(cardItems(cat).findIndex(x=>x.id===state[cat])/3)):0;}
@@ -491,7 +497,7 @@
     return savedPixelFingerprints;
   }
   function keepsakeCompositionKey() {
-    const {sound,unlocked,friendId,faceStudioEnabled,faceOptions,...visual}=state;let picture=null;
+    const {sound,bgm,unlocked,friendId,faceStudioEnabled,faceOptions,...visual}=state;let picture=null;
     if(faceStudioEnabled&&faceOptions?.enabled&&!photo)visual.faceOptions=faceOptions;
     if(photo){if(!keepsakePhotoIds.has(photo.url))keepsakePhotoIds.set(photo.url,keepsakePhotoIds.size+1);picture={...photo,url:keepsakePhotoIds.get(photo.url)};}
     return JSON.stringify({visual,picture,bounds:stillKeepsakeBounds()});
@@ -659,17 +665,17 @@
   }
   function renderParents() {
     const faceSetting=studioReady()?'<div class="setting-row"><span>おともだちの絵本</span><button class="setting-toggle '+(state.faceStudioEnabled?'on':'')+'" data-setting="face-studio" aria-label="おともだちの絵本" aria-pressed="'+state.faceStudioEnabled+'">'+(state.faceStudioEnabled?'オン':'オフ')+'</button></div><p class="settings-note">オンにすると、架空のおともだちを新しく迎えて、一緒に着せ替えで遊べます。迎えた子の顔はそのまま絵本に残ります。「しゃしん」の遊びは別の入口です。</p>':'';
-    openModal(`${closeMarkup()}<h2>おうちのかたへ</h2>${faceSetting}<div class="setting-row"><span>おけしょうばこを ひらく</span><button class="setting-toggle ${state.unlocked?'on':''}" data-setting="unlock" aria-pressed="${state.unlocked}">${state.unlocked?'ひらいています':'ひらく'}</button></div><div class="setting-row"><span>おと・こえ</span><button class="setting-toggle ${state.sound?'on':''}" data-setting="sound" aria-pressed="${state.sound}">${state.sound?'オン':'オフ'}</button></div><p class="settings-note">写真は通信・保存しません。開いている画面のメモリだけで扱い、画面を閉じると消えます。保存ボタンを押すと、完成した記念写真を端末へ書き出します。</p><p class="settings-note">カメラは「カメラ」を押したときだけ開きます。iPadではSafariのHTTPS環境か、写真選択からご利用ください。</p><button class="reset-button" data-reset>おしたくを はじめから</button><p class="settings-note">ドレスなどの設定は、このブラウザに保存されます。</p>`,'settings-modal');
+    openModal(`${closeMarkup()}<h2>おうちのかたへ</h2>${faceSetting}<div class="setting-row"><span>おけしょうばこを ひらく</span><button class="setting-toggle ${state.unlocked?'on':''}" data-setting="unlock" aria-pressed="${state.unlocked}">${state.unlocked?'ひらいています':'ひらく'}</button></div><div class="setting-row"><span>おと・こえ</span><button class="setting-toggle ${state.sound?'on':''}" data-setting="sound" aria-pressed="${state.sound}">${state.sound?'オン':'オフ'}</button></div><div class="setting-row"><span>BGM（音楽）<small class="setting-hint">全体のおとがオフの間は無音です</small></span><button class="setting-toggle ${state.bgm!==false?'on':''}" data-setting="bgm" aria-label="BGM（音楽）" aria-pressed="${state.bgm!==false}">${state.bgm!==false?'オン':'オフ'}</button></div><p class="settings-note">写真は通信・保存しません。開いている画面のメモリだけで扱い、画面を閉じると消えます。保存ボタンを押すと、完成した記念写真を端末へ書き出します。</p><p class="settings-note">カメラは「カメラ」を押したときだけ開きます。iPadではSafariのHTTPS環境か、写真選択からご利用ください。</p><button class="reset-button" data-reset>おしたくを はじめから</button><p class="settings-note">ドレスなどの設定は、このブラウザに保存されます。</p>`,'settings-modal');
   }
   function openParents(){renderParents();$('#modal').insertAdjacentHTML('beforeend','<p class="settings-note">案内の声：AivisSpeech: まお</p>');}
   let holdTimer,holdIndicator;
   function beginParentHold(e) { if(e.button>0)return;clearParentHold();holdIndicator=document.createElement('span');holdIndicator.className='parent-hold-progress';const r=$('#parents').getBoundingClientRect();holdIndicator.style.cssText=`left:${r.left-3}px;top:${r.top-3}px`;document.body.append(holdIndicator);holdTimer=setTimeout(()=>{clearParentHold();openParents();},1200); }
   function clearParentHold(){clearTimeout(holdTimer);holdIndicator?.remove();holdIndicator=null;}
 
-  function beginPlay(mode){started=true;ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{stopCamera();stopVoice();}});}
+  function beginPlay(mode){started=true;window.PrincessMusic?.start();ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{window.PrincessMusic?.setSleeping(true);stopCamera();stopVoice();},onWake:()=>window.PrincessMusic?.setSleeping(false)});}
   $('#start').addEventListener('click',()=>beginPlay('princess'));
   $('#startCasual')?.addEventListener('click',()=>beginPlay('casual'));
-  $('#undo').addEventListener('click',()=>{if(!history.length)return;const preferences={unlocked:state.unlocked,sound:state.sound,faceStudioEnabled:state.faceStudioEnabled},past=history.pop();window.PrincessFriendBook?.rememberLook(state.friendId,state);state={...past.design,...preferences};photo=past.photo?{...past.photo}:null;if(!state.faceStudioEnabled&&state.friendId!=='cast-gentle')swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderCloset();renderHeader();effect();});
+  $('#undo').addEventListener('click',()=>{if(!history.length)return;const preferences={unlocked:state.unlocked,sound:state.sound,bgm:state.bgm,faceStudioEnabled:state.faceStudioEnabled},past=history.pop();window.PrincessFriendBook?.rememberLook(state.friendId,state);state={...past.design,...preferences};photo=past.photo?{...past.photo}:null;if(!state.faceStudioEnabled&&state.friendId!=='cast-gentle')swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderCloset();renderHeader();effect();});
   $('#sound').addEventListener('click',()=>{state.sound=!state.sound;persist();renderHeader();if(state.sound){ensureAudio();effect();speak('welcome');}else stopVoice();});
   $('#done').addEventListener('click',openCompletion);$('#photo').addEventListener('click',openPhotoMenu);$('#friends').addEventListener('click',openFaceMenu);
   $('#parents').addEventListener('pointerdown',beginParentHold);$('#parents').addEventListener('pointerup',clearParentHold);$('#parents').addEventListener('pointerleave',clearParentHold);$('#parents').addEventListener('pointercancel',clearParentHold);$('#parents').addEventListener('contextmenu',e=>e.preventDefault());$('#parents').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openParents();}});
@@ -748,7 +754,7 @@
     const nail=t.closest('[data-nail]');if(nail){paintNail(Number(nail.dataset.nail));return;}
     const color=t.closest('[data-color]');if(color){chooseColor(color);return;}
     if(t.closest('[data-nail-done]')){closeModal();sparkle();effect();return;}
-    const setting=t.closest('[data-setting]');if(setting){if(setting.dataset.setting==='face-studio'){state.faceStudioEnabled=!state.faceStudioEnabled;if(!state.faceStudioEnabled)swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderHeader();renderCloset();openParents();}else if(setting.dataset.setting==='unlock'){state.unlocked=!state.unlocked;persist();renderCloset();openParents();}else{state.sound=!state.sound;persist();renderHeader();if(!state.sound)stopVoice();openParents();}return;}
+    const setting=t.closest('[data-setting]');if(setting){if(setting.dataset.setting==='face-studio'){state.faceStudioEnabled=!state.faceStudioEnabled;if(!state.faceStudioEnabled)swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderHeader();renderCloset();openParents();}else if(setting.dataset.setting==='bgm'){state.bgm=state.bgm===false;persist();window.PrincessMusic?.sync({gesture:true});openParents();}else if(setting.dataset.setting==='unlock'){state.unlocked=!state.unlocked;persist();renderCloset();openParents();}else{state.sound=!state.sound;persist();renderHeader();if(!state.sound)stopVoice();openParents();}return;}
     if(t.closest('[data-reset]')){openModal(closeMarkup()+'<h2>はじめからにしますか？</h2><p>衣装の保存と、このブラウザーのおともだちの絵本を消去します。</p><div class="modal-actions"><button class="action-button secondary" data-reset-back>やめる</button><button class="reset-button" data-reset-confirm>すべて消去</button></div>','settings-modal');return;}if(t.closest('[data-reset-back]')){openParents();return;}if(t.closest('[data-reset-confirm]')){window.PrincessFriendBook?.reset();state=clone(DEFAULT);state.casual=normalizeCasual();photo=null;history=[];persist();category='dress';page=0;makeupPart=null;renderDoll();renderCloset();renderHeader();closeModal();toast('あたらしい おしたくを はじめよう');}
   });
   $('#modal').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-nail]')){e.preventDefault();paintNail(Number(e.target.dataset.nail));}});
@@ -760,6 +766,7 @@
   let resizeFrame;window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{renderDoll();if(category==='background'&&window.PrincessOuting)renderOutings($('#closetBody'));if($('#modal').classList.contains('outing-modal'))fitOutingMap($('#modal'));});});
   const hairOrientation=window.matchMedia('(orientation:portrait)'),refreshHairOrientation=()=>{if(category==='hair'){page=selectedPage('hair');renderCloset();}};
   if(hairOrientation.addEventListener)hairOrientation.addEventListener('change',refreshHairOrientation);else hairOrientation.addListener(refreshHairOrientation);
+  window.PrincessMusic?.configure({source:()=>assets().music?.atelier||'',enabled:()=>state.bgm!==false,sound:()=>state.sound});
   validateDesign();page=selectedPage(category);renderHeader();renderDoll();renderCloset();
   // A tiny inspection surface is useful for offline smoke tests, with no photo contents exposed.
   window.PrincessAtelier={getDesign:()=>clone(state),getPhotoStatus:()=>({present:!!photo,scale:photo?.scale||1,flip:photo?.flip||false}),getCategory:()=>category};
