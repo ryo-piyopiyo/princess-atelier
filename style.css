@@ -205,3 +205,23 @@
 .ballroom-hint b{font-size:20px;color:#aa6776;line-height:1}
 .ballroom-hint[hidden]{display:none}
 @media(max-width:600px){.ballroom-hint{right:5px;top:19%;padding:4px 7px;font-size:10px}}
+
+.music-volume-open{color:#96637b}
+.music-volume{margin:12px auto;max-width:360px;color:#72544d}
+.music-volume label{display:block;text-align:center;margin:0 0 10px;font-weight:700}
+.music-volume-row{display:grid;grid-template-columns:44px minmax(60px,1fr) 44px 3.2em;align-items:center;gap:8px}
+.music-volume-row button{height:44px;border-radius:50%;font-size:22px;color:#815b70;background:#f3e4dc}
+.music-volume-row input{width:100%;min-width:0;height:44px;accent-color:#a25e80}
+.music-volume-row output{font-variant-numeric:tabular-nums}
+.volume-modal{width:min(400px,94vw);padding:44px 20px 16px}
+@media(max-width:510px){.topbar .brand{left:64px;transform:none}.topbar .brand-flower{display:none}.topbar .top-actions .icon-button{width:44px;height:44px;padding:11px}}
+
+.place-action{position:absolute;z-index:3;right:10px;top:18%;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:46px;max-width:clamp(112px,20vw,190px);padding:3px 10px 3px 5px;border:2px solid #d3ad7c;border-radius:24px;background:#fff8ebed;color:#775362;font-weight:700;font-size:12px;line-height:1.25}
+.place-action svg{width:33px;height:33px;flex:none}.place-action[hidden],.place-performance[hidden]{display:none}
+.place-performance{position:absolute;inset:15% 0 11%;z-index:2;overflow:hidden;pointer-events:none;opacity:1;transition:opacity .2s}
+.place-performance svg{display:block;width:100%;height:100%;overflow:visible}
+.place-performance.finishing{opacity:0}
+@media(max-width:600px){.place-action{top:19%;right:4px;max-width:116px;font-size:10px;padding:2px 8px 2px 3px}.place-action svg{width:28px;height:28px}}
+@media(prefers-reduced-motion:reduce){.place-performance{transition:none}}
+
+.scene-guests{position:absolute;inset:0;overflow:hidden;pointer-events:none}.scene-guests>svg{display:block;width:100%;height:100%}

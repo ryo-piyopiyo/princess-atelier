@@ -23,7 +23,7 @@
   };
   const areaNodes=areas=>Object.entries(areas).map(([id,a])=>[id,a.left+a.width/2,a.top+a.height/2]);
   const regions={
-    world:{label:'おでかけの ちず',nodes:[['mountain',16,15],['castle',48,15],['amusement',80,15],['riverbank',12,47],['garden',49,44],['park',80,44],['room',17,69],['town',48,69],['aquarium',81,69]]},
+    world:{label:'おでかけの ちず',nodes:[['mountain',16,15],['castle',48,15],['amusement',80,15],['riverbank',12,47],['garden',49,44],['park',80,44],['room',17,72],['town',48,72],['aquarium',81,72]]},
     aquarium:{label:'すいぞくかんの ちず',nodes:[['dolphin',23,26],['tank',76,27],['souvenir',64,70],['aquarium',17,73]]},
     amusement:{label:'ゆうえんちの ちず',nodes:[['ferris',23,22],['carousel',78,24],['coaster',74,63],['amusement',21,70]]},
     park:{label:'こうえんの ちず',nodes:[['sandbox',22,27],['playground',76,24],['adventure',74,60],['park',21,80]]},
@@ -48,9 +48,9 @@
   function distinctReading(item){const reading=String(item?.reading||''),label=String(item?.label||'');return reading.replace(/\s/g,'')!==label.replace(/\s/g,'')?reading:'';}
   function regionFor(id){if(id==='garden')return 'garden';if(assets().outings?.[id]?.region)return assets().outings[id].region;if(['amusement','ferris','carousel','coaster'].includes(id))return 'amusement';if(['aquarium','dolphin','tank','souvenir'].includes(id))return 'aquarium';if(['park','sandbox','playground','adventure'].includes(id))return 'park';if(['town','road','mall','cinema'].includes(id))return 'town';if(['castle','palace','sky'].includes(id))return 'castle';if(['mountain','thicket'].includes(id))return 'mountain';if(['riverbank','riverpark'].includes(id))return 'river';return 'world';}
   function parent(region){return region&&region!=='world'?'world':null;}
-  const arrow='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="m27 9-15 15 15 15M13 24h24" fill="none" stroke="#94576d" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function regionEntry(region){return regions.world.nodes.find(([id])=>regionFor(id)===region)?.[0]||null;}
+  function isEntrance(id){return regionFor(id)!=='world'&&regionEntry(regionFor(id))===id;}
   const expand='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M18 7H7v11m23-11h11v11M7 30v11h11m23-11v11H30" fill="none" stroke="#87596a" stroke-width="6" stroke-linecap="round"/><path d="m13 13 8 8m14-8-8 8M13 35l8-8m14 8-8-8" stroke="#87596a" stroke-width="4"/></svg>';
-  const check='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 6" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function landmark(id){
     if(id==='ferris')return landmark('amusement');
     if(id==='carousel')return '<svg viewBox="0 0 96 96" aria-hidden="true"><path d="M11 34 48 8l37 26Z" fill="#d893b3" stroke="#a66d8b" stroke-width="3"/><path d="m28 34 20-26 20 26" fill="#f2dba8"/><path d="M48 35v47M17 85h62M26 41v33m44-33v33" stroke="#c6a065" stroke-width="5"/><path d="m19 65 11-16 14 5 7-8 8 5-6 12-15 3-4 12-5-1-1-11Z" fill="#fff1d5" stroke="#bd9783" stroke-width="2"/><path d="M8 35h80M14 85h68" stroke="#b986a4" stroke-width="7" stroke-linecap="round"/></svg>';
@@ -59,20 +59,39 @@
     return `<svg viewBox="0 0 96 96" aria-hidden="true">${shapes[id]||shapes[id==='sky'?'castle':id==='palace'?'castle':id==='riverpark'?'riverbank':'garden']}</svg>`;
   }
   function mapIcon(){const src=assets().icons?.outing;return src?`<img src="${esc(src)}" alt="">`:'<svg viewBox="0 0 96 96" aria-hidden="true"><path d="m8 20 25-9 30 9 25-9v65l-25 9-30-9-25 9Z" fill="#e9dfb8" stroke="#a88967" stroke-width="3"/><path d="M33 11v65m30-56v65" stroke="#cfbc95" stroke-width="3"/><path d="M12 53q24-28 41-4t30-11" fill="none" stroke="#8cbcaf" stroke-width="9"/><path d="M69 15c-22 0-19 24 0 41 19-17 22-41 0-41Z" fill="#d582a2" stroke="#9e5276" stroke-width="3"/><circle cx="69" cy="30" r="7" fill="#fff4ce"/></svg>';}
+  function mapSource(region){const src=assets().outingMaps?.[region];return region==='castle'&&src?.startsWith('assets/')?src+'?v=interior8':src;}
+  function mapPicture(region,current){
+    const src=mapSource(region),id=region==='world'?regionEntry(regionFor(current))||current:current,node=regions[region]?.nodes.find(([place])=>place===id);
+    return `<span class="outing-context-map">${src?`<img src="${esc(src)}" alt="">`:mapIcon()}${node?`<i class="outing-mini-here" style="left:${node[1]}%;top:${node[2]}%" aria-hidden="true"></i>`:''}</span>`;
+  }
+  const explainedMaps=new Set();
+  function firstGuide(region){
+    const kind=region==='world'?'world':'local';
+    if(explainedMaps.has(kind))return null;
+    explainedMaps.add(kind);
+    return kind==='world'?'mapGuideWorld':'mapGuideLocal';
+  }
+  function contextTrail(current,viewed){
+    const region=regionFor(current),item=destination(current,region),entry=get(regionEntry(region));
+    const label=item?.reading||item?.label||'', picture=item?.src?`<img src="${esc(item.src)}" alt="">`:landmark(current);
+    const tile=(id,image,text)=>`<button class="outing-context-tile ${viewed===id?'active':''}" data-outing-region="${id}" aria-label="${esc(text)}を みる" aria-pressed="${viewed===id}">${image}<small>${esc(text)}</small></button>`;
+    const arrow='<b class="outing-context-link" aria-hidden="true">›</b>';
+    const sections=[tile('world',mapPicture('world',current),'ぜんたい')];
+    if(region!=='world')sections.push(tile(region,mapPicture(region,current),entry?.reading||entry?.label||regions[region].label));
+    sections.push(`<button class="outing-context-place" data-outing-current="${esc(region)}" aria-label="いま いる ${esc(label)}の ちず"><span class="outing-context-photo">${picture}</span><span class="outing-context-location"><i class="outing-location-pin" aria-hidden="true"></i><strong>いま ここ</strong></span><small>${esc(label)}</small></button>`);
+    return `<div class="outing-context" role="navigation" aria-label="いまいる ところと ちず">${sections.join(arrow)}</div>`;
+  }
   function render({current='garden',region=regionFor(current),large=false,compact=false}={}){
-    if(!regions[region])region='world';const local=regions[region],up=parent(region),map=assets().outingMaps?.[region],currentItem=destination(current,region);
-    const reading=distinctReading(currentItem),location=currentItem?`<span class="outing-current-place"><span class="outing-location-pin" aria-hidden="true">●</span><strong>${esc(currentItem.label)}</strong></span>${reading?`<small class="outing-current-reading">${esc(reading)}</small>`:''}`:'';
-    const mapSrc=region==='castle'&&map?.startsWith('assets/')?map+'?v=interior8':map;
-    if(compact)return `<section class="outing-workbench outing-compact"><button class="outing-open-map" data-outing-expand aria-label="${esc(local.label)}を ひらく"><span class="outing-compact-picture">${map?`<img src="${esc(mapSrc)}" alt="">`:mapIcon()}</span><span class="outing-open-magnifier">${expand}</span><span class="outing-compact-copy">${location}<span class="outing-open-label">ちずを ひらく</span></span></button></section>`;
-
-    const background=map?`<img class="outing-map-image" src="${esc(mapSrc)}" alt="">`:'<svg class="outing-map-image" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-hidden="true"><rect width="1000" height="750" fill="#e6e8c2"/><path d="M0 160q270 150 510-50t490 60M0 600q350-170 530-50t470-20" stroke="#b3cfb0" stroke-width="150" fill="none"/><path d="M50 670Q330 440 520 400T940 70" stroke="#eee0b6" stroke-width="56" fill="none"/><path d="M50 670Q330 440 520 400T940 70" stroke="#cbb585" stroke-width="3" stroke-dasharray="12 16" fill="none"/></svg>';
+    if(!regions[region])region='world';const local=regions[region],map=mapSource(region),currentRegion=regionFor(current),selectedId=region==='world'?regionEntry(currentRegion)||current:current;
+    if(compact)return `<section class="outing-workbench outing-compact"><div class="outing-open-map">${contextTrail(current,region)}<button class="outing-open-action" data-outing-expand aria-label="ちずを ひらく"><span class="outing-open-magnifier">${expand}</span><span class="outing-open-label">ちずを ひらく</span></button></div></section>`;
+    const background=map?`<img class="outing-map-image" src="${esc(map)}" alt="">`:'<svg class="outing-map-image" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-hidden="true"><rect width="1000" height="750" fill="#e6e8c2"/><path d="M0 160q270 150 510-50t490 60M0 600q350-170 530-50t470-20" stroke="#b3cfb0" stroke-width="150" fill="none"/><path d="M50 670Q330 440 520 400T940 70" stroke="#eee0b6" stroke-width="56" fill="none"/></svg>';
     const pins=local.nodes.map(([id,x,y])=>{
-      const item=destination(id,region),selected=id===current,label=item.label,area=map&&({castle:castleAreas,garden:gardenAreas,amusement:amusementAreas}[region]?.[id]);
+      const item=destination(id,region),selected=id===selectedId,label=item.label,area=map&&({castle:castleAreas,garden:gardenAreas,amusement:amusementAreas}[region]?.[id]);
       const position=area?`left:${area.left}%;top:${area.top}%;width:${area.width}%;height:${area.height}%`:`left:${x}%;top:${y}%`;
       const caption=area?` style="left:${(area.labelX-area.left)/area.width*100}%;top:${(area.labelY-area.top)/area.height*100}%"`:'';
-      return `<button class="outing-pin ${map?'outing-hotspot':''} ${area?'outing-ride-zone':''} ${selected?'selected':''}" style="${position}" data-outing-go="${id}" aria-label="${esc(label)}に いく" aria-pressed="${selected}" ${selected?'aria-current="location"':''}>${map?'':`<span class="outing-pin-picture">${item.src?`<img src="${esc(item.src)}" alt="">`:landmark(id)}</span>`}<small${caption}>${esc(label)}</small>${selected?`<i class="outing-pin-check">${check}</i>`:''}</button>`;
+      return `<button class="outing-pin ${map?'outing-hotspot':''} ${area?'outing-ride-zone':''} ${selected?'selected':''}" style="${position}" data-outing-go="${id}" aria-label="${esc(label)}に いく" aria-pressed="${selected}" ${selected?'aria-current="location"':''}>${map?'':`<span class="outing-pin-picture">${item.src?`<img src="${esc(item.src)}" alt="">`:landmark(id)}</span>`}<small${caption}>${esc(item.reading||label)}</small>${selected?`<i class="outing-pin-here"><span class="outing-location-pin" aria-hidden="true"></span>いま ここ</i>`:''}</button>`;
     }).join('');
-    return `<section class="outing-workbench ${large?'outing-large':''}" data-outing-region="${region}"><div class="outing-toolbar">${up?`<button class="outing-up" data-outing-region="${up}" aria-label="ひろい ちずに もどる">${arrow}<span>${mapIcon()}</span><small class="outing-up-label">ひろい ちず</small></button>`:`<span class="outing-world-symbol">${mapIcon()}</span>`}<div class="outing-map-title"><strong>${esc(local.label)}</strong>${location}</div>${large?'':`<button class="outing-expand" data-outing-expand aria-label="ちずを おおきく みる">${expand}</button>`}</div><div class="outing-map-frame"><div class="outing-board">${background}${pins}</div></div></section>`;
+    return `<section class="outing-workbench ${large?'outing-large':''}" data-outing-region="${region}"><div class="outing-toolbar">${contextTrail(current,region)}</div><div class="outing-map-title"><strong>${esc(local.label)}</strong><small>${region==='world'?'いきたい ところを タッチ':isEntrance(current)&&currentRegion===region?'ついたよ！ つぎは どこ？':'いきたい おへやや あそびを タッチ'}</small></div><div class="outing-map-frame"><div class="outing-board">${background}${pins}</div></div></section>`;
   }
-  window.PrincessOuting=Object.freeze({entries,get,destination,distinctReading,regionFor,parent,render,mapIcon,landmark});
+  window.PrincessOuting=Object.freeze({entries,get,destination,distinctReading,regionFor,parent,regionEntry,isEntrance,firstGuide,render,mapIcon,landmark});
 })();

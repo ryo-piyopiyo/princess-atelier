@@ -14,6 +14,10 @@
   const cache=new Map(),maxCacheBytes=32*1024*1024;
   let cacheBytes=0;
   const read=(key,fallback,...args)=>{try{const value=config[key];return typeof value==='function'?value(...args):value??fallback;}catch{return fallback;}};
+  const volume=()=>{const v=read('volume',70);return Number.isFinite(v)?Math.max(0,Math.min(100,v))/100:levels.normal;};
+  const voiceLevel=()=>volume()*levels.ducked/levels.normal;
+  const playbackLevel=()=>activeVoice?voiceLevel():volume();
+  const nativeMuted=()=>backend==='element'&&(!!activeVoice||volume()===0);
   const visible=()=>!document.hidden&&!pageAway;
   const wanted=()=>started&&read('enabled',true)!==false&&read('sound',true)!==false&&!sleeping&&visible();
   const useGain=()=>gain&&backend!=='element';
@@ -28,7 +32,8 @@
   }
   function level(duration){
     if(!playing||!wanted()||transitionTimer!==null)return;
-    const target=activeVoice?levels.ducked:levels.normal;
+    const target=playbackLevel();
+    if(backend==='element')audio.muted=nativeMuted();
     if(Math.abs(fade.to-target)>.0001)setLevel(target,duration);
   }
   function cancelTransition(){if(transitionTimer!==null)clearTimeout(transitionTimer);transitionTimer=null;}
@@ -130,20 +135,20 @@
       node=context.createBufferSource();node.buffer=buffer;node.loop=true;node.connect(gain);bufferNode=node;
       bufferStartedAt=context.currentTime;playing=true;playAttempts++;
       node.onended=()=>{if(bufferNode===node){bufferNode=null;playing=false;if(wanted())blocked=true;}};
-      node.start(0,offset%buffer.duration);setLevel(activeVoice?levels.ducked:levels.normal,levels.fadeInMs);
+      node.start(0,offset%buffer.duration);setLevel(playbackLevel(),levels.fadeInMs);
     }catch{bufferNode=null;playing=false;try{node?.disconnect();}catch{}useNativeSource();startNative();}
   }
   function startNative(){
     if(pending||!wanted())return;
     if(!audio.paused&&playing){level(levels.releaseMs);return;}
-    setLevel(0);audio.muted=backend==='element'&&!!activeVoice;
+    setLevel(0);audio.muted=nativeMuted();
     const ticket=++attempt;pending=true;playAttempts++;resumeContext();
     let result;try{result=audio.play();}catch{pending=false;blocked=true;return;}
     Promise.resolve(result).then(()=>{
       if(ticket!==attempt){if(!wanted())audio.pause();return;}
       pending=false;if(!wanted()){pause();return;}
-      blocked=false;playing=true;audio.muted=backend==='element'&&!!activeVoice;
-      setLevel(activeVoice?levels.ducked:levels.normal,levels.fadeInMs);
+      blocked=false;playing=true;audio.muted=nativeMuted();
+      setLevel(playbackLevel(),levels.fadeInMs);
     }).catch(()=>{if(ticket!==attempt)return;pending=false;playing=false;blocked=true;setLevel(0);});
   }
   function sync({gesture=false}={}){
@@ -188,13 +193,13 @@
     if(backend==='element')audio.muted=true;
     if(transitionTimer!==null){
       const remaining=Math.max(0,(fade.end-now())*1000);
-      if(currentGain()>levels.ducked&&remaining>levels.duckMs)setLevel(0,levels.duckMs);
+      if(currentGain()>voiceLevel()&&remaining>levels.duckMs)setLevel(0,levels.duckMs);
     }else level(levels.duckMs);
     return activeVoice;
   }
   function voiceEnd(token){
     if(token!==activeVoice||!activeVoice)return;
-    activeVoice=0;if(backend==='element'&&(playing||pending)&&wanted())audio.muted=false;level(levels.releaseMs);
+    activeVoice=0;if(backend==='element'&&(playing||pending)&&wanted())audio.muted=nativeMuted();level(levels.releaseMs);
   }
   audio.addEventListener('pause',()=>{if(audio.paused&&backend!=='buffer'){playing=false;pending=false;}});
   audio.addEventListener('error',()=>{if(audio.error&&backend!=='buffer'){pending=false;playing=false;blocked=true;setLevel(0);}});
@@ -208,6 +213,7 @@
     start(options={}){config={...config,...options};started=true;sync({gesture:true});},
     sync,
     setSleeping(value){sleeping=!!value;sync({gesture:!sleeping});},
+    refreshVolume(){level(65);sync({gesture:true});},
     voiceStart,voiceEnd,getPlayhead,
     getState(){return {started,sleeping,visible:visible(),enabled:read('enabled',true)!==false,sound:read('sound',true)!==false,track,transitioning:transitionTimer!==null,backend,contextState:context?.state||null,playing,pending:pending||(backend==='buffer'&&!buffer&&!!loading),blocked,voiceActive:!!activeVoice,gain:currentGain(),targetGain:fade.to,playAttempts};}
   });

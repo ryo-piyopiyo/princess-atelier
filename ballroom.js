@@ -1,8 +1,9 @@
-/* One paper-doll turn in two bars of the ballroom's 120 BPM waltz. Only the
+/* One paper-doll turn in two bars of the ballroom waltz. Only the
    live figure is grouped; its floor shadow, stickers and keepsake stay still. */
 (() => {
   'use strict';
-  const ns='http://www.w3.org/2000/svg',beatMs=500;
+  const ns='http://www.w3.org/2000/svg';
+  const beatMs=60000/(window.PrincessAssets?.musicInfo?.ballroom?.bpm||156);
   const doll=document.getElementById('doll'),hint=document.getElementById('danceHint');
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
   let figure=null,animation=null,pendingFrame=0;

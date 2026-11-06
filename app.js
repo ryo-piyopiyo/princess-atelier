@@ -11,7 +11,7 @@
   let keepsakeSaveInFlight = false;
   const CASUAL_PARTS=[{id:'top',label:'トップス'},{id:'outer',label:'うわぎ'},{id:'bottom',label:'ボトムス'},{id:'socks',label:'くつした'},{id:'shoes',label:'くつ'}];
   const CASUAL_FALLBACK={top:'tee',outer:'none',bottom:'skirt',socks:'ankle',shoes:'sneakers',accessory:'none',background:'room',styles:{top:{color:'#dc9fb4',pattern:'plain',ribbon:false},outer:{color:'#a4c4b7',pattern:'plain',ribbon:false},bottom:{color:'#91abc8',pattern:'plain',ribbon:false},socks:{color:'#fff1df',pattern:'plain',ribbon:false},shoes:{color:'#cc9b80',pattern:'plain',ribbon:false}}};
-  const DEFAULT = {mode:'princess',casual:CASUAL_FALLBACK,dress:'ball',dressColor:'#ec9695',hair:'long',hairColor:'#865947',face:'gentle',friendId:'cast-gentle',faceStudioEnabled:false,faceOptions:{enabled:false},accessory:'crown',shoes:'ballet',shoeColor:null,accessoryColor:null,dressAccentColor:null,hairRibbonColor:null,necklace:'none',ring:'none',bracelet:'none',necklaceColor:null,ringColor:null,braceletColor:null,necklaceMetalColor:null,ringMetalColor:null,braceletMetalColor:null,stickerColors:{},background:'garden',makeup:{blush:null,lip:null},nails:{hands:Array(10).fill(null),feet:Array(10).fill(null)},stickers:[],unlocked:false,sound:true,bgm:true};
+  const DEFAULT = {mode:'princess',casual:CASUAL_FALLBACK,dress:'ball',dressColor:'#ec9695',hair:'long',hairColor:'#865947',face:'gentle',friendId:'cast-gentle',faceStudioEnabled:false,faceOptions:{enabled:false},accessory:'crown',shoes:'ballet',shoeColor:null,accessoryColor:null,dressAccentColor:null,hairRibbonColor:null,necklace:'none',ring:'none',bracelet:'none',necklaceColor:null,ringColor:null,braceletColor:null,necklaceMetalColor:null,ringMetalColor:null,braceletMetalColor:null,stickerColors:{},background:'garden',makeup:{blush:null,lip:null},nails:{hands:Array(10).fill(null),feet:Array(10).fill(null)},stickers:[],unlocked:false,sound:true,bgm:true,bgmVolume:70};
   const POLISHES = ['#e99aa9','#c48ec1','#b8b3e0','#82b5df','#83c9c1','#e8bd72','#dc7778','#f6eee1'];
   const BLUSHES = ['#eb91a3','#eaa481','#dca0ba'];
   const LIPS = ['#d87d94','#c85f7f','#e39a83'];
@@ -77,7 +77,8 @@
       let member=result.faceStudioEnabled&&book?book.get(s.friendId||('cast-'+s.face)):null;
       if(result.faceStudioEnabled&&book&&!s.friendId&&s.faceOptions?.enabled){member=book.create(s.faceOptions);book.rememberLook(member.id,s);try{localStorage.setItem(STORAGE,JSON.stringify({...s,friendId:member.id}));}catch{}}
       if(!member)member=book?.get('cast-gentle')||{id:'cast-gentle',face:'gentle'};identity(result,member);
-      result.sound = s.sound !== false;result.bgm=s.bgm!==false; result.unlocked = s.unlocked === true;
+      result.sound = s.sound !== false;result.bgm=s.bgm!==false;
+      result.bgmVolume=Number.isFinite(s.bgmVolume)?Math.max(0,Math.min(100,Math.round(s.bgmVolume))):70; result.unlocked = s.unlocked === true;
       result.stickers = Array.isArray(s.stickers)?s.stickers.filter(x=>x&&['flower','star','butterfly','ribbon','heart','gem'].includes(x.id)&&Number.isFinite(x.x)&&Number.isFinite(x.y)).slice(0,MAX_STICKERS).map(x=>({...x,color:safeColor(x.color),size:stickerSize(x.size)})):[];
       return result;
     } catch { const result=clone(DEFAULT);result.casual=normalizeCasual();return result; }
@@ -239,6 +240,7 @@
     renderPlayModes();
     renderStageLabel();
     window.PrincessMusic?.sync();
+    if(!state.sound)window.PrincessActivities?.silence();
   }
   function renderStageLabel(){
     const label=$('#stageLabel'),provider=window.PrincessOuting,current=effectiveBackground(),place=category==='background'?provider?.destination?.(current,provider.regionFor(current)):null,guide=state.mode==='princess'?assets().dressGuide?.[state.dress]:null;
@@ -250,12 +252,18 @@
     const categories=CATEGORIES.filter(c=>c.id!=='shoes'||state.mode==='princess');
     $('#categories').innerHTML=categories.map(c=>`<button class="category ${category===c.id?'active':''}" data-category="${c.id}" aria-label="${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}${c.id==='makeup'&&!state.unlocked?'、できたを おすと ひらく':''}" aria-pressed="${category===c.id}"><span class="category-icon">${c.id==='dress'&&state.mode==='casual'?casualModeIcon():categoryVisual(c.id)}</span><span class="category-label">${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}</span>${c.id==='makeup'&&!state.unlocked?`<span class="lock-dot">${icon('lock')}</span>`:''}</button>`).join('');
   }
-  function syncBallroom(){window.PrincessBallroom?.update(started&&effectiveBackground()==='ballroom'&&category!=='stickers'&&category!=='makeup',state.mode);}
+  function syncBallroom(){
+    const available=started&&category!=='stickers'&&category!=='makeup';
+    const place=effectiveBackground();
+    window.PrincessBallroom?.update(available&&place==='ballroom',state.mode);
+    window.PrincessActivities?.update(place,available);
+  }
   function renderDoll() {
     const options={...state,background:effectiveBackground(),accessory:effectiveAccessory(),transparentBackground:true,photoUrl:photo?.url||null,hairFit:photo?.hairFit,gardenImageDataUrl:assets().garden||undefined};
     const markup=art()?.render?.(options);
     $('#doll').innerHTML=markup||'<svg viewBox="0 0 600 800"><ellipse cx="300" cy="740" rx="180" ry="20" fill="#bb9e8030"/><path d="M245 330h110l150 370H95z" fill="#e7a5bb"/><ellipse cx="300" cy="205" rx="70" ry="88" fill="#f4ceb1"/><path d="M230 205q-15-150 70-140 95-10 70 140l-23-73q-80 35-95 0z" fill="#8a6045"/><circle cx="278" cy="204" r="4" fill="#76503c"/><circle cx="322" cy="204" r="4" fill="#76503c"/><path d="M285 238q15 12 30 0" fill="none" stroke="#ba7a79" stroke-width="3"/></svg>';
     const scene=effectiveBackground();$('#stage').dataset.background=scene;
+    window.PrincessScenery?.update(scene);
     if(assets().scenes?.[scene])$('#stage').style.backgroundImage=`url("${assets().scenes[scene]}")`;
     else if(scene!=='garden'&&art()?.renderBackground){$('#stage').style.backgroundImage=`url("data:image/svg+xml,${encodeURIComponent(art().renderBackground({background:scene}))}")`;}else $('#stage').style.backgroundImage='';
     injectPhoto($('#doll'));
@@ -275,7 +283,7 @@
     const container=document.createElement('div'),background=art().renderBackground({background:effectiveBackground(),gardenImageDataUrl:assets().garden||undefined});
     const backdrop=document.createElement('div');backdrop.innerHTML=background;const backdropSvg=$('svg',backdrop);backdropSvg.setAttribute('x',String(bounds.x));backdropSvg.setAttribute('y',String(bounds.y));backdropSvg.setAttribute('width',String(bounds.width));backdropSvg.setAttribute('height',String(bounds.height));backdropSvg.setAttribute('preserveAspectRatio','xMidYMid slice');
     const character=art().render({...state,background:effectiveBackground(),accessory:effectiveAccessory(),photoUrl:photo?.url||null,hairFit:photo?.hairFit,transparentBackground:true});
-    container.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" width="${bounds.width}" height="${bounds.height}" role="img" aria-label="できあがった おひめさま">${backdrop.innerHTML}${character}</svg>`;injectPhoto(container);addStickers($('svg',container),bounds);return container.innerHTML;
+    container.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" width="${bounds.width}" height="${bounds.height}" role="img" aria-label="できあがった おひめさま">${backdrop.innerHTML}${window.PrincessScenery?.markup(effectiveBackground(),bounds)||''}${character}</svg>`;injectPhoto(container);addStickers($('svg',container),bounds);return container.innerHTML;
   }
   function photoTransform(p=photo, center={x:300,y:210}) {
     const s=p?.scale||1; return `translate(${center.x+(p?.x||0)} ${center.y+(p?.y||0)}) scale(${p?.flip?-s:s} ${s}) translate(${-center.x} ${-center.y})`;
@@ -343,15 +351,22 @@
     return candidates.slice(0,3);
   }
   function fitOutingMap(root){const frame=$('.outing-map-frame',root),board=$('.outing-board',root);if(!frame||!board)return;const width=Math.max(0,Math.floor(Math.min(frame.clientWidth,frame.clientHeight*4/3)));if(width){board.style.width=width+'px';board.style.height=width*.75+'px';}}
-  function outingNeedsDialog(body){return Math.min(body.clientWidth*3/4,body.clientHeight-58)<200;}
-  function renderOutings(body){const provider=window.PrincessOuting,current=effectiveBackground();if(outingRenderedScene!==current){outingRegion=current==='garden'&&outingRenderedScene===null?'world':provider.regionFor(current);outingRenderedScene=current;}outingRegion||=provider.regionFor(current);const compact=outingNeedsDialog(body);body.dataset.outingCompact=String(compact);body.innerHTML=provider.render({current,region:outingRegion,compact});if(!compact)fitOutingMap(body);$('#wardrobeHint').textContent=compact?'ちずを ひらいて おでかけ':'いきたい ところを タッチ';}
+  function renderOutings(body){const provider=window.PrincessOuting,current=effectiveBackground();if(outingRenderedScene!==current){outingRegion=provider.regionFor(current);outingRenderedScene=current;}outingRegion||=provider.regionFor(current);body.dataset.outingCompact='true';body.innerHTML=provider.render({current,region:outingRegion,compact:true});$('#wardrobeHint').textContent='ちずを ひらいて おでかけ';}
   function openOutingMap(){const provider=window.PrincessOuting;if(!provider)return;outingRegion||=provider.regionFor(effectiveBackground());openModal(`${closeMarkup()}<h2>どこへ いこう？</h2>${provider.render({current:effectiveBackground(),region:outingRegion,large:true})}`,'outing-modal');fitOutingMap($('#modal'));}
   let outingArrivalTimer;
   function showOutingArrival(item){const stage=$('#stage');if(!stage)return;window.clearTimeout(outingArrivalTimer);$('#outingArrival')?.remove();const card=document.createElement('div'),reading=window.PrincessOuting.distinctReading(item);card.id='outingArrival';card.className='outing-arrival';card.setAttribute('role','status');card.innerHTML=`<span class="outing-arrival-picture">${item.src?`<img src="${escapeAttr(item.src)}" alt="">`:window.PrincessOuting.landmark(item.id)}</span><span class="outing-arrival-copy"><strong>${escapeAttr(item.label)}</strong><small>${reading?escapeAttr(reading)+'に きたよ！':'ついたよ！'}</small></span>`;stage.append(card);outingArrivalTimer=window.setTimeout(()=>card.remove(),4600);}
-  function travelOuting(id){const provider=window.PrincessOuting,item=provider?.get(id);if(!item)return;const arrival=provider.destination?.(id,outingRegion)||item;if($('#modal').classList.contains('outing-modal'))closeModal(false);outingRenderedScene=id;outingRegion=provider.regionFor(id);change(()=>{if(state.mode==='casual')state.casual.background=id;else state.background=id;});showOutingArrival(arrival);speak(item.voiceKey,`${item.label}に来たよ！`);}
+  function travelOuting(id){const provider=window.PrincessOuting,item=provider?.get(id);if(!item)return;const arrival=provider.destination?.(id,outingRegion)||item,continueInside=outingRegion==='world'&&provider.isEntrance(id);closeModal(false);outingRenderedScene=id;outingRegion=provider.regionFor(id);change(()=>{if(state.mode==='casual')state.casual.background=id;else state.background=id;});showOutingArrival(arrival);if(continueInside)openOutingMap();speak(item.voiceKey,`${item.label}に来たよ！`);}
   function handleOutingClick(event){
     if(!window.PrincessOuting)return false;const target=event.target,go=target.closest('button[data-outing-go]');if(go){travelOuting(go.dataset.outingGo);return true;}
-    const region=target.closest('button[data-outing-region]');if(region){outingRegion=region.dataset.outingRegion;if($('#modal').classList.contains('outing-modal'))openOutingMap();else renderCloset();effect();return true;}
+    const currentMap=target.closest('button[data-outing-current]');
+    const region=target.closest('button[data-outing-region]');
+    if(currentMap||region){
+      outingRegion=currentMap?.dataset.outingCurrent||region.dataset.outingRegion;
+      openOutingMap();effect();
+      const guidance=state.sound&&window.PrincessOuting.firstGuide(outingRegion);
+      if(guidance)speak(guidance);
+      return true;
+    }
     if(target.closest('[data-outing-expand]')){openOutingMap();effect();return true;}return false;
   }
   function hairColors() { return (window.PrincessHair?.colors||['#dfb965','#865947','#342f3b','#b6654d','#bfc2d2','#db9aaf','#a49acb','#83bdbc']).map(c=>typeof c==='string'?c:c.color||c.value).filter(safeColor); }
@@ -497,10 +512,11 @@
     }
   }
   function selectedPage(cat){if(cat==='hair')return Math.max(0,Math.floor(hairFamilyItems().findIndex(item=>item.id===state.hair)/hairPerPage()));if(cat==='dress'&&state.mode==='casual'){const items=casualItems(casualPart);return Math.max(0,Math.floor(items.findIndex(x=>x.id===state.casual[casualPart])/(items.length>4?3:4)));}return cat==='dress'?Math.max(0,Math.floor(cardItems(cat).findIndex(x=>x.id===state[cat])/3)):0;}
-  function setCategory(cat) { category=cat;if(cat==='background'&&outingRenderedScene!==effectiveBackground())outingRegion=null;if(cat==='hair')hairStep='base';page=selectedPage(cat);makeupPart=null;renderCloset();renderStageLabel();speak(cat==='hair'?'hairChooseBase':cat==='accessory'?'jewelAccessory':cat==='makeup'&&!state.unlocked?'locked':cat==='dress'&&state.mode==='casual'?'casualMode':cat==='stickers'?'stickerHow':cat);effect();if(cat==='background'&&$('#closetBody').dataset.outingCompact==='true')openOutingMap(); }
+  function setCategory(cat) { category=cat;if(cat==='background'&&outingRenderedScene!==effectiveBackground())outingRegion=null;if(cat==='hair')hairStep='base';page=selectedPage(cat);makeupPart=null;renderCloset();renderStageLabel();speak(cat==='hair'?'hairChooseBase':cat==='accessory'?'jewelAccessory':cat==='makeup'&&!state.unlocked?'locked':cat==='dress'&&state.mode==='casual'?'casualMode':cat==='stickers'?'stickerHow':cat==='background'?(state.sound&&window.PrincessOuting?.firstGuide(outingRegion)||cat):cat);effect();if(cat==='background'&&$('#closetBody').dataset.outingCompact==='true')openOutingMap(); }
 
   function openModal(markup, extraClass='', afterClose=null) {
     window.PrincessBallroom?.cancel();
+    window.PrincessActivities?.cancel();
     hideMakeupPortrait(true);
     closeModal(false);const modal=$('#modal');modal.className='modal '+extraClass;modal.innerHTML=markup;$('#modalBackdrop').classList.remove('hidden');modalAfterClose=afterClose;
     const close=$('.modal-close',modal);if(close)close.focus({preventScroll:true});
@@ -593,7 +609,7 @@
     return savedPixelFingerprints;
   }
   function keepsakeCompositionKey() {
-    const {sound,bgm,unlocked,friendId,faceStudioEnabled,faceOptions,...visual}=state;let picture=null;
+    const {sound,bgm,bgmVolume,unlocked,friendId,faceStudioEnabled,faceOptions,...visual}=state;let picture=null;
     if(faceStudioEnabled&&faceOptions?.enabled&&!photo)visual.faceOptions=faceOptions;
     if(photo){if(!keepsakePhotoIds.has(photo.url))keepsakePhotoIds.set(photo.url,keepsakePhotoIds.size+1);picture={...photo,url:keepsakePhotoIds.get(photo.url)};}
     return JSON.stringify({visual,picture,bounds:stillKeepsakeBounds()});
@@ -805,19 +821,42 @@
     if(state.nails[nailMode][index]!==polish){record();state.nails[nailMode][index]=polish;persist();renderDoll();renderHeader();}
     renderNailDrawing();effect();
   }
+  function musicVolumeControl(){
+    return '<div class="music-volume"><label for="musicVolumeSlider">おんがくの おおきさ</label><div class="music-volume-row"><button type="button" data-volume-step="-10" aria-label="音楽を 小さく">−</button><input id="musicVolumeSlider" type="range" min="0" max="100" step="1" value="'+state.bgmVolume+'"><button type="button" data-volume-step="10" aria-label="音楽を 大きく">＋</button><output for="musicVolumeSlider">'+state.bgmVolume+'%</output></div></div>';
+  }
+  function changeMusicVolume(value){
+    if(!Number.isFinite(value))return;
+    state.bgmVolume=Math.max(0,Math.min(100,Math.round(value)));
+    const slider=$('#musicVolumeSlider'),label=$('.music-volume output');
+    if(slider)slider.value=state.bgmVolume;
+    if(label)label.textContent=state.bgmVolume+'%';
+    window.PrincessMusic?.refreshVolume();
+    persist();
+  }
+  $('#musicVolumeOpen').addEventListener('click',()=>{
+    const notice=!state.sound?'音を出すには、右上のスピーカーを押してね。':state.bgm===false?'おうちの設定でBGMがおやすみ中です。':'';
+    openModal(closeMarkup()+musicVolumeControl()+(notice?'<p class="settings-note">'+notice+'</p>':''),'volume-modal');
+  });
+  $('#modal').addEventListener('input',event=>{
+    if(event.target.id==='musicVolumeSlider')changeMusicVolume(event.target.valueAsNumber);
+  });
+  $('#modal').addEventListener('click',event=>{
+    const step=event.target.closest('[data-volume-step]');
+    if(step)changeMusicVolume(state.bgmVolume+Number(step.dataset.volumeStep));
+  });
   function renderParents() {
     const faceSetting=studioReady()?'<div class="setting-row"><span>おともだちの絵本</span><button class="setting-toggle '+(state.faceStudioEnabled?'on':'')+'" data-setting="face-studio" aria-label="おともだちの絵本" aria-pressed="'+state.faceStudioEnabled+'">'+(state.faceStudioEnabled?'オン':'オフ')+'</button></div><p class="settings-note">オンにすると、架空のおともだちを新しく迎えて、一緒に着せ替えで遊べます。迎えた子の顔はそのまま絵本に残ります。「しゃしん」の遊びは別の入口です。</p>':'';
-    openModal(`${closeMarkup()}<h2>おうちのかたへ</h2>${faceSetting}<div class="setting-row"><span>おけしょうばこを ひらく</span><button class="setting-toggle ${state.unlocked?'on':''}" data-setting="unlock" aria-pressed="${state.unlocked}">${state.unlocked?'ひらいています':'ひらく'}</button></div><div class="setting-row"><span>おと・こえ</span><button class="setting-toggle ${state.sound?'on':''}" data-setting="sound" aria-pressed="${state.sound}">${state.sound?'オン':'オフ'}</button></div><div class="setting-row"><span>BGM（音楽）<small class="setting-hint">全体のおとがオフの間は無音です</small></span><button class="setting-toggle ${state.bgm!==false?'on':''}" data-setting="bgm" aria-label="BGM（音楽）" aria-pressed="${state.bgm!==false}">${state.bgm!==false?'オン':'オフ'}</button></div><p class="settings-note">写真は通信・保存しません。開いている画面のメモリだけで扱い、画面を閉じると消えます。保存ボタンを押すと、完成した記念写真を端末へ書き出します。</p><p class="settings-note">カメラは「カメラ」を押したときだけ開きます。iPadではSafariのHTTPS環境か、写真選択からご利用ください。</p><button class="reset-button" data-reset>おしたくを はじめから</button><p class="settings-note">ドレスなどの設定は、このブラウザに保存されます。</p>`,'settings-modal');
+    openModal(`${closeMarkup()}<h2>おうちのかたへ</h2>${faceSetting}<div class="setting-row"><span>おけしょうばこを ひらく</span><button class="setting-toggle ${state.unlocked?'on':''}" data-setting="unlock" aria-pressed="${state.unlocked}">${state.unlocked?'ひらいています':'ひらく'}</button></div><div class="setting-row"><span>おと・こえ</span><button class="setting-toggle ${state.sound?'on':''}" data-setting="sound" aria-pressed="${state.sound}">${state.sound?'オン':'オフ'}</button></div><div class="setting-row"><span>BGM（音楽）<small class="setting-hint">全体のおとがオフの間は無音です</small></span><button class="setting-toggle ${state.bgm!==false?'on':''}" data-setting="bgm" aria-label="BGM（音楽）" aria-pressed="${state.bgm!==false}">${state.bgm!==false?'オン':'オフ'}</button></div>${musicVolumeControl()}<p class="settings-note">写真は通信・保存しません。開いている画面のメモリだけで扱い、画面を閉じると消えます。保存ボタンを押すと、完成した記念写真を端末へ書き出します。</p><p class="settings-note">カメラは「カメラ」を押したときだけ開きます。iPadではSafariのHTTPS環境か、写真選択からご利用ください。</p><button class="reset-button" data-reset>おしたくを はじめから</button><p class="settings-note">ドレスなどの設定は、このブラウザに保存されます。</p>`,'settings-modal');
   }
   function openParents(){renderParents();$('#modal').insertAdjacentHTML('beforeend','<p class="settings-note">案内の声：AivisSpeech: まお</p>');}
   let holdTimer,holdIndicator;
   function beginParentHold(e) { if(e.button>0)return;clearParentHold();holdIndicator=document.createElement('span');holdIndicator.className='parent-hold-progress';const r=$('#parents').getBoundingClientRect();holdIndicator.style.cssText=`left:${r.left-3}px;top:${r.top-3}px`;document.body.append(holdIndicator);holdTimer=setTimeout(()=>{clearParentHold();openParents();},1200); }
   function clearParentHold(){clearTimeout(holdTimer);holdIndicator?.remove();holdIndicator=null;}
 
-  function beginPlay(mode){started=true;ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessMusic?.start();window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{window.PrincessBallroom?.cancel();window.PrincessMusic?.setSleeping(true);stopCamera();stopVoice();},onWake:()=>window.PrincessMusic?.setSleeping(false)});}
+  function beginPlay(mode){started=true;ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessMusic?.start();window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{window.PrincessActivities?.cancel();window.PrincessBallroom?.cancel();window.PrincessMusic?.setSleeping(true);stopCamera();stopVoice();},onWake:()=>window.PrincessMusic?.setSleeping(false)});}
   $('#start').addEventListener('click',()=>beginPlay('princess'));
   $('#startCasual')?.addEventListener('click',()=>beginPlay('casual'));
-  $('#undo').addEventListener('click',()=>{if(!history.length)return;const preferences={unlocked:state.unlocked,sound:state.sound,bgm:state.bgm,faceStudioEnabled:state.faceStudioEnabled},past=history.pop();window.PrincessFriendBook?.rememberLook(state.friendId,state);state={...past.design,...preferences};photo=past.photo?{...past.photo}:null;if(!state.faceStudioEnabled&&state.friendId!=='cast-gentle')swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderCloset();renderHeader();effect();});
+  $('#undo').addEventListener('click',()=>{if(!history.length)return;const preferences={unlocked:state.unlocked,sound:state.sound,bgm:state.bgm,bgmVolume:state.bgmVolume,faceStudioEnabled:state.faceStudioEnabled},past=history.pop();window.PrincessFriendBook?.rememberLook(state.friendId,state);state={...past.design,...preferences};photo=past.photo?{...past.photo}:null;if(!state.faceStudioEnabled&&state.friendId!=='cast-gentle')swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderCloset();renderHeader();effect();});
   $('#sound').addEventListener('click',()=>{state.sound=!state.sound;persist();renderHeader();if(state.sound){ensureAudio();effect();speak('welcome');}else stopVoice();});
   $('#done').addEventListener('click',openCompletion);$('#photo').addEventListener('click',openPhotoMenu);$('#friends').addEventListener('click',openFaceMenu);
   $('#parents').addEventListener('pointerdown',beginParentHold);$('#parents').addEventListener('pointerup',clearParentHold);$('#parents').addEventListener('pointerleave',clearParentHold);$('#parents').addEventListener('pointercancel',clearParentHold);$('#parents').addEventListener('contextmenu',e=>e.preventDefault());$('#parents').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openParents();}});
@@ -927,15 +966,16 @@
   if(hairOrientation.addEventListener)hairOrientation.addEventListener('change',refreshHairOrientation);else hairOrientation.addListener(refreshHairOrientation);
   window.PrincessTrays.configure({getState:()=>state,getCasualPart:()=>casualPart,getSticker:()=>selectedSticker,hairPreview,cardItems,casualThumbnail,stickerCard,openModal,closeMarkup,change,speak,icon,toolIcon:casualToolIcon,escape:escapeAttr,refreshCasual:kind=>openCasualStyle(kind,false)});
   window.PrincessColourBook?.configure({groups:paletteGroups,speak,icon,effect});
+  window.PrincessActivities?.useAudio(()=>{
+    if(!started||!state.sound)return null;
+    ensureAudio();return audioContext;
+  });
   window.PrincessMusic?.configure({
     track:()=>{
-      const scene=effectiveBackground();if(scene==='ballroom')return 'ballroom';
-      const region=window.PrincessOuting?.regionFor(scene);
-      if(region==='amusement')return 'park';
-      if(region==='aquarium')return 'aquarium';
-      return 'atelier';
+      return effectiveBackground();
     },
-    source:track=>assets().music?.[track]||assets().music?.atelier||'',
+    source:track=>assets().music?.[track]||assets().music?.room||'',
+    volume:()=>state.bgmVolume,
     enabled:()=>state.bgm!==false,sound:()=>state.sound
   });
   validateDesign();page=selectedPage(category);renderHeader();renderDoll();renderCloset();

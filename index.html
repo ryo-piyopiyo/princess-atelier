@@ -11,14 +11,14 @@
   <meta name="theme-color" content="#f6e9df">
   <meta name="description" content="おひめさまの、ちいさなおしたくアトリエ。着せ替えて、お城の舞踏会場や花のお庭へおでかけしよう。">
   <title>おひめさまの アトリエ</title>
-  <link rel="stylesheet" href="style.css?v=090d54ecd714">
+  <link rel="stylesheet" href="style.css?v=8ee1538e5091">
   <link rel="stylesheet" href="makeup.css?v=ed452fd33946">
   <link rel="stylesheet" href="face-desk.css?v=555cd65f6162">
   <link rel="stylesheet" href="hair.css?v=292f4e0ecd82">
   <link rel="stylesheet" href="colour-book.css?v=db472947e1af">
-  <link rel="stylesheet" href="outing.css?v=a72d56f596d3">
+  <link rel="stylesheet" href="outing.css?v=0657e261e092">
   <link rel="stylesheet" href="trays.css?v=3ef25bd94881">
-  <script src="assets.js?v=9e5744570365" defer></script>
+  <script src="assets.js?v=d1c4f46f32bd" defer></script>
   <script src="extras.js?v=fba1f3c92cc1" defer></script>
   <script src="hair.js?v=1d5b7071ce09" defer></script>
   <script src="face-studio.js?v=5ad0aa9dd280" defer></script>
@@ -29,13 +29,18 @@
   <script src="coord-art.js?v=5706a6a2505e" defer></script>
   <script src="trays.js?v=e6261c343ae8" defer></script>
   <script src="art.js?v=70df7c6ff71e" defer></script>
+  <script src="scenery.js?v=08ac0ba0174d" defer></script>
   <script src="beauty.js?v=efacaee1ef21" defer></script>
   <script src="idle.js?v=db46850abd61" defer></script>
-  <script src="outing.js?v=19da19803a34" defer></script>
-  <script src="music.js?v=f4c7411504dc" defer></script>
-  <script src="ballroom.js?v=e1d8d3c6dca5" defer></script>
+  <script src="outing.js?v=c4d7cfd25bfb" defer></script>
+  <script src="music.js?v=85fe6de7fe88" defer></script>
+  <script src="ballroom.js?v=6106a07c4b8b" defer></script>
+  <script src="place-play.js?v=ffc0128580ea" defer></script>
+  <script src="play-court.js?v=4f85d9bc4789" defer></script>
+  <script src="play-town.js?v=1a8a6b03a3f8" defer></script>
+  <script src="play-rides.js?v=38bf4743b19c" defer></script>
   <script src="colour-book.js?v=8b424923f389" defer></script>
-  <script src="app.js?v=5de486729bf5" defer></script>
+  <script src="app.js?v=633432ac3ed6" defer></script>
 </head>
 <body>
   <main class="app" id="app">
@@ -44,6 +49,7 @@
       <div class="brand"><span class="brand-flower">✧</span><span>おひめさまの<br><b>アトリエ</b></span></div>
       <div class="top-actions">
         <button class="icon-button" id="sound" aria-label="おとを けす" title="おと"></button>
+        <button class="icon-button music-volume-open" id="musicVolumeOpen" type="button" aria-label="音楽の音量" title="音楽の音量"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12 22V8l15-3v14m-15-6 15-3" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="8" cy="23" rx="5" ry="4" fill="currentColor"/><ellipse cx="23" cy="20" rx="5" ry="4" fill="currentColor"/></svg></button>
         <button class="icon-button parent-button" id="parents" aria-label="おうちのかた（ながくおす）" title="おうちのかた（ながくおす）"></button>
       </div>
     </header>
@@ -54,8 +60,11 @@
           <div class="stage-halo"></div>
           <div class="stage-label" id="stageLabel"><span>じゆうに えらんでね</span><i>✧</i></div>
           <nav class="play-mode-switch" id="playModes" aria-label="あそびを えらぶ"></nav>
+          <div id="sceneGuests" class="scene-guests" aria-hidden="true"></div>
           <div class="doll" id="doll" aria-label="おひめさま"></div>
           <button type="button" class="ballroom-hint" id="danceHint" aria-label="おひめさまと ワルツを おどる" hidden><b aria-hidden="true">♫</b> おどる</button>
+          <div id="placePerformance" class="place-performance" hidden aria-hidden="true"></div>
+          <button type="button" id="placeAction" class="place-action" hidden></button>
           <div class="sparkle-layer" id="sparkles" aria-hidden="true"></div>
           <span class="friend-name" id="friendName"></span>
           <div class="stage-bottom">
