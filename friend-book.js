@@ -33,6 +33,11 @@
   function normalizedOptions(value={}){
     const input=object(value),result={enabled:true};
     for(const [key,allowed] of Object.entries(faceChoices))result[key]=allowed.includes(input[key])?input[key]:faceDefaults[key];
+    // Legacy friends keep their original depth/undertone recipe and rendering.
+    if(Number.isInteger(input.skinShade)&&input.skinShade>=0&&input.skinShade<=44&&
+       Number.isInteger(input.skinHue)&&input.skinHue>=0&&input.skinHue<=4){
+      result.skinShade=input.skinShade;result.skinHue=input.skinHue;
+    }
     return result;
   }
   function identity(sequence){

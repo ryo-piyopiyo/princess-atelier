@@ -49,7 +49,6 @@
 .foot-pickers button{position:relative;width:50%;border:0;background:transparent}
 .foot-pickers span,.feet-back{display:grid;place-items:center;width:54px;height:54px;padding:12px;border-radius:50%;border:2px solid #d5a9b7;color:#8b566b;background:#fffaf4;box-shadow:0 3px 6px #70485820}
 .foot-pickers span{position:absolute;bottom:7%;right:20%}.foot-pickers button+button span{right:auto;left:20%}.feet-back{position:absolute;right:12px;bottom:12px;z-index:1}
-.extra-switch{display:flex;gap:8px;flex-shrink:0}.extra-switch button{flex:1;min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;background:#f5ede4;border-radius:16px;border:2px solid transparent}.extra-switch button.active{background:#fae4ed;border-color:#cb90aa}.extra-switch button svg{width:50px;height:44px}.extra-switch button span{font-size:12px}
 .closet-body.extra-shelf{display:flex;flex-direction:column!important;gap:8px}.extra-shelf .cards{width:100%;flex:1;min-height:0}.extra-shelf .cards .choice{min-height:0}
 .modal.photo-editor{width:min(720px,100%);max-height:calc(100dvh - 24px);padding:24px;overflow:auto}
 .photo-editor h2{font-size:21px;margin:0 48px 16px}.fit-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(225px,1fr);gap:16px;align-items:center}
@@ -81,3 +80,81 @@
   .play-mode-picture{width:31px;height:31px}.play-mode-label{font-size:9px}
 }
 .setting-hint{display:block;font-size:10px;line-height:1.4;color:#9b7862;margin-top:5px;max-width:230px}
+
+/* Reserve room for the actual garment pictures. On a short screen the shelf
+   scrolls instead of collapsing the middle row between its controls. */
+.casual-shelf {
+  grid-template-rows: 69px minmax(172px,1fr) 64px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+.casual-cards { grid-auto-rows: minmax(0,1fr); }
+@media (orientation: landscape) {
+  .categories:has([data-category="shoes"]) { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
+@media (orientation: portrait) {
+  .atelier:has(.casual-shelf) { grid-template-rows: minmax(0,1.7fr) minmax(min(324px,52svh),1fr); }
+  .casual-shelf { grid-template-rows: 61px minmax(92px,1fr) 54px; gap: 6px; }
+  .casual-part { min-height: 0; }
+  .casual-edit-actions button { min-height: 44px; }
+  .extra-shelf .cards:has([data-extra-choice="ballet"]) { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (orientation: portrait) and (max-height: 850px) {
+  .casual-shelf { grid-template-rows: 48px minmax(92px,1fr) 44px; gap: 5px; padding-top: 5px; }
+  .casual-part { padding: 2px; gap: 0; }
+  .casual-part > span { height: 31px; }
+  .casual-part > small { font-size: 9px; }
+  .casual-edit-actions svg { width: 30px; height: 30px; }
+}
+@media (orientation: landscape) and (max-height: 700px) {
+  .casual-shelf { grid-template-rows: 56px minmax(160px,1fr) 48px; gap: 6px; }
+  .casual-part, .casual-edit-actions button { min-height: 44px; }
+  .casual-part > span { height: 35px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .wardrobe:has(.casual-shelf) .wardrobe-heading,
+  .wardrobe:has(.casual-shelf) .wardrobe-hint { display: none; }
+  .wardrobe:has(.casual-shelf) .categories {
+    grid-template-columns: repeat(6,minmax(0,1fr)); gap: 2px; padding-bottom: 4px;
+  }
+  .wardrobe:has(.casual-shelf) .category { min-height: 48px; padding: 2px 0; gap: 1px; font-size: 8px; }
+  .wardrobe:has(.casual-shelf) .category-icon { width: 28px; height: 28px; }
+  .casual-shelf { grid-template-rows: 46px minmax(154px,1fr) 44px; gap: 5px; padding-top: 5px; }
+  .casual-part { padding: 1px; }
+  .casual-part > span { height: 28px; }
+  .casual-edit-actions svg { width: 30px; height: 30px; }
+}
+@media (orientation: portrait) and (max-width: 380px) {
+  .categories:has([data-category="shoes"]) .category-icon { width: 32px; height: 32px; }
+}
+
+/* The color page occupies the same space as the positioning controls. */
+.fit-modes [data-fit-mode=tone] svg{width:38px;height:38px}
+.fit-tone{width:min(232px,100%);display:grid;gap:3px;align-content:start}
+.fit-tone[hidden],.fit-adjust[hidden]{display:none}
+.photo-tone-row label{display:block;font-size:12px;text-align:center;color:#785b55}
+.photo-tone-row>div{display:grid;grid-template-columns:44px minmax(38px,1fr) 44px;align-items:center;gap:4px}
+.photo-tone-row button,.fit-tone>[data-tone-reset]{min-height:44px;border-radius:14px;background:#f4e8db;display:flex;align-items:center;justify-content:center;color:#785665}
+.photo-tone-row button svg{width:28px;height:28px}
+.photo-tone-row input{width:100%;min-width:0;margin:0;height:44px;accent-color:#a8697e;cursor:pointer}
+.fit-tone>[data-tone-reset]{align-self:center;justify-self:center;gap:7px;padding:6px 12px;background:#faeee7;font-size:12px}
+.fit-tone>[data-tone-reset] svg{width:18px;height:18px}
+@media(max-width:610px){
+  .fit-layout .fit-controls{grid-template-columns:minmax(62px,.6fr) minmax(0,1.4fr);justify-items:center}
+  .fit-modes button{grid-template-rows:28px auto;min-height:47px;padding:1px 5px}
+  .fit-modes img,.fit-modes .category-asset,.fit-modes [data-fit-mode=tone] svg{height:26px;width:26px}
+}
+@media(max-width:359px){
+  .photo-editor .fit-adjust{gap:3px}
+  .photo-editor .fit-pad{grid-template:repeat(3,42px)/repeat(3,42px);gap:2px}
+  .photo-editor .fit-key{width:42px;height:42px}
+}
+@media(max-height:490px) and (min-width:611px){
+  .modal.photo-editor{padding:12px 18px}
+  .photo-editor h2,.photo-editor .modal-actions{margin-top:3px;margin-bottom:5px}
+  .fit-layout .photo-editor-preview{height:55dvh}
+  .fit-modes button{grid-template-rows:24px auto;min-height:44px}
+  .fit-modes img,.fit-modes .category-asset,.fit-modes [data-fit-mode=tone] svg{width:24px;height:24px}
+  .fit-controls .photo-editor-tip{display:none}
+}

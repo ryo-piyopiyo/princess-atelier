@@ -41,14 +41,14 @@
   function speakCasualShelf(part){const key=CASUAL_SHELF_VOICES[part];if(key)speak(key);}
   function speakCasualItem(part,id){const key=CASUAL_ITEM_VOICES[part]?.[id];if(key)speak(key);else speakCasualShelf(part);}
   function speakCasualStyle(kind,value){const key=kind==='ribbon'?(value==='on'?'casualRibbonOn':'noRibbon'):CASUAL_PATTERN_VOICES[value];if(key)speak(key);}
-  const CATEGORIES = [{id:'dress',label:'ドレス'},{id:'hair',label:'かみのけ'},{id:'accessory',label:'ヘアアクセサリー'},{id:'background',label:'おでかけ'},{id:'makeup',label:'おけしょう'},{id:'stickers',label:'シール'}];
-  const TITLES = {dress:'どれに する？',hair:'かみがたを えらぼう',accessory:'きらり、かざろう',background:'どこにお出かけしようかな？',makeup:'おけしょうの じかん',stickers:'ぺたん、と かざろう'};
+  const CATEGORIES = [{id:'dress',label:'ドレス'},{id:'shoes',label:'くつ'},{id:'hair',label:'かみのけ'},{id:'accessory',label:'ヘアアクセサリー'},{id:'background',label:'おでかけ'},{id:'makeup',label:'おけしょう'},{id:'stickers',label:'シール'}];
+  const TITLES = {dress:'どれに する？',hair:'かみがたを えらぼう',accessory:'きらり、かざろう',shoes:'どの くつを はこう？',background:'どこにお出かけしようかな？',makeup:'おけしょうの じかん',stickers:'ぺたん、と かざろう'};
   const STICKERS = [{id:'flower',label:'おはな'},{id:'star',label:'おほしさま'},{id:'butterfly',label:'ちょうちょ'},{id:'ribbon',label:'リボン'},{id:'heart',label:'ハート'},{id:'gem',label:'ほうせき'}];
   const FALLBACK_CARDS = {dress:[{id:'ball',label:'ふんわり',colors:['#e7a5bb','#b5b4df','#a4cbd0']},{id:'flower',label:'おはな',colors:['#f0c5a0','#b0cbaa','#d9a9bf']},{id:'fairy',label:'ようせい',colors:['#b6cfae','#d2b5de','#a4d8d2']},{id:'moon',label:'おつきさま',colors:['#bec4e3','#e7c48e','#e5b7ca']},{id:'rose',label:'ばら',colors:['#dca1b4','#e7bb9f','#c9b6dd']},{id:'rainbow',label:'にじ',colors:['#e9b7c9','#c4bfe3','#b6d1cb']}],hair:[{id:'long',label:'さらさら'},{id:'braid',label:'みつあみ'},{id:'bob',label:'ふわり'}],accessory:[{id:'crown',label:'ティアラ'},{id:'bow',label:'リボン'},{id:'flowers',label:'おはな'},{id:'star',label:'おほしさま'}],background:[{id:'garden',label:'おにわ'},{id:'palace',label:'おしろ'},{id:'sky',label:'おそら'}]};
   FALLBACK_CARDS.face=[{id:'gentle',label:'やさしい おかお'},{id:'smile',label:'にっこり'},{id:'sparkle',label:'きらきら'},{id:'rosy',label:'まんまる'}];
   let state = loadDesign(), history = [], category = 'dress', page = 0, makeupPart = null;
   let photo = null, photoDraft = null, cameraStream = null, cameraSession = 0, modalCleanup = null, modalAfterClose = null, audioContext = null, voiceAudio = null, voiceCleanup = null, toastTimer;
-  let nailMode = 'hands', footSide=null, selectedNail = -1, polish = POLISHES[0], started = false, selectedSticker = 'flower', accessoryShelf='accessory';
+  let nailMode = 'hands', footSide=null, selectedNail = -1, polish = POLISHES[0], started = false, selectedSticker = 'flower';
   let casualPart='top',casualPreviewSerial=0,paletteTarget='dress',paletteGroup=0;
   let hairStep='base',hairRenderedSelection=null,outingRegion=null,outingRenderedScene=null;
   const hairRemembered=new Map();
@@ -149,6 +149,7 @@
   }
   function categoryVisual(name) {
     if(name==='background'&&window.PrincessOuting)return window.PrincessOuting.mapIcon();
+    if(name==='shoes'&&window.PrincessExtras)return window.PrincessExtras.card('shoes',state.shoes||'ballet');
     const png=assets().icons?.[name];return png?`<img class="category-asset" src="${escapeAttr(png)}" alt="">`:paintedIcon(name)||icon(name);
   }
   function icon(name) {
@@ -173,7 +174,7 @@
     if(cat==='background')return outingEntries();
     if(cat==='accessory'&&mode==='casual')return [{id:'none',label:'はずす'},...((window.PrincessExtras?.cards?.accessory||FALLBACK_CARDS.accessory).filter(item=>['bow','flowers'].includes(item.id)))];
     const raw = cat==='hair'&&window.PrincessHair?.cards?window.PrincessHair.cards:art()?.cards?.[cat];
-    const list = Array.isArray(raw) ? raw : FALLBACK_CARDS[cat];
+    const list = Array.isArray(raw) ? raw : FALLBACK_CARDS[cat]||[];
     const result=list.map(x=>typeof x==='string'?{id:x,label:x}:x);
     if(cat==='dress'){const order=['ball','morning','afternoon','riding','stage','fairy','flower','moon','rose','rainbow'];result.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));}
     return result;
@@ -183,8 +184,9 @@
     const index={flower:1,rose:1,rainbow:2}[item?.id]||0,c=item?.colors?.[index]||item?.colors?.[0];return safeColor(typeof c==='string'?c:c?.color||c?.value)||state.dressColor;
   }
   function validateDesign() {
-    for(const cat of ['dress','hair','face','accessory','background']) {
-      if(!cardItems(cat,'princess').some(x=>x.id===state[cat])) state[cat]=cardItems(cat,'princess')[0].id;
+    for(const cat of ['dress','hair','face','accessory','shoes','background']) {
+      const items=cardItems(cat,'princess');
+      if(items.length&&!items.some(x=>x.id===state[cat]))state[cat]=items[0].id;
     }
     state.casual=normalizeCasual(state.casual);
     for(const {id} of CASUAL_PARTS){const items=casualItems(id);if(!items.some(item=>item.id===state.casual[id]))state.casual[id]=items[0].id;}
@@ -215,7 +217,8 @@
     label.innerHTML=guide?`<span class="dress-guide"><strong>${escapeAttr(guide.label)}</strong><small>${escapeAttr(guide.occasion||'')}</small></span><i>✧</i>`:`<span>${state.mode==='casual'?'すきな ふくを えらんでね':'じゆうに えらんでね'}</span><i>✧</i>`;
   }
   function renderCategories() {
-    $('#categories').innerHTML=CATEGORIES.map(c=>`<button class="category ${category===c.id?'active':''}" data-category="${c.id}" aria-label="${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}${c.id==='makeup'&&!state.unlocked?'、できたを おすと ひらく':''}" aria-pressed="${category===c.id}"><span class="category-icon">${c.id==='dress'&&state.mode==='casual'?casualModeIcon():c.id==='accessory'&&state.mode==='casual'?window.PrincessExtras?.card?.('accessory','bow')||casualToolIcon('ribbon'):categoryVisual(c.id)}</span><span class="category-label">${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}</span>${c.id==='makeup'&&!state.unlocked?`<span class="lock-dot">${icon('lock')}</span>`:''}</button>`).join('');
+    const categories=CATEGORIES.filter(c=>c.id!=='shoes'||state.mode==='princess');
+    $('#categories').innerHTML=categories.map(c=>`<button class="category ${category===c.id?'active':''}" data-category="${c.id}" aria-label="${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}${c.id==='makeup'&&!state.unlocked?'、できたを おすと ひらく':''}" aria-pressed="${category===c.id}"><span class="category-icon">${c.id==='dress'&&state.mode==='casual'?casualModeIcon():c.id==='accessory'&&state.mode==='casual'?window.PrincessExtras?.card?.('accessory','bow')||casualToolIcon('ribbon'):categoryVisual(c.id)}</span><span class="category-label">${c.id==='dress'&&state.mode==='casual'?'おようふく':c.label}</span>${c.id==='makeup'&&!state.unlocked?`<span class="lock-dot">${icon('lock')}</span>`:''}</button>`).join('');
   }
   function renderDoll() {
     const options={...state,background:effectiveBackground(),accessory:effectiveAccessory(),transparentBackground:true,photoUrl:photo?.url||null,hairFit:photo?.hairFit,gardenImageDataUrl:assets().garden||undefined};
@@ -245,13 +248,28 @@
   function photoTransform(p=photo, center={x:300,y:210}) {
     const s=p?.scale||1; return `translate(${center.x+(p?.x||0)} ${center.y+(p?.y||0)}) scale(${p?.flip?-s:s} ${s}) translate(${-center.x} ${-center.y})`;
   }
+  let photoLayerId=0;
   function photoSize(p){const aspect=p?.aspect||192/242;return {w:Math.max(192,242*aspect),h:Math.max(242,192/aspect)};}
+  // Only the clipped photo uses this transfer. Gamma adjusts midtones while
+  // keeping white and black anchored, including in PNG exports.
+  function applyPhotoTone(slot,p) {
+    const image=$('.fitted-photo',slot),filter=$('.photo-tone-filter',slot);
+    if(!p.brightness&&!p.warmth){image.removeAttribute('filter');return;}
+    const light=2**(-.13*(p.brightness||0)),warm=p.warmth||0;
+    const powers=[light*2**(-.046*warm),light,light*2**(.065*warm)];
+    [...filter.querySelectorAll('[data-tone-channel]')].forEach((channel,i)=>channel.setAttribute('exponent',powers[i].toFixed(5)));
+    image.setAttribute('filter',`url(#${filter.id})`);
+  }
   function injectPhoto(root,p=photo) {
     if(!p)return;
     const slot=$('#face-photo-slot',root); if(!slot)return;
-    const unique='photo-clip-'+Math.random().toString(36).slice(2,9);
+    const unique='photo-'+(++photoLayerId);
     const {w,h}=photoSize(p);
-    slot.innerHTML=`<defs><clipPath id="${unique}"><ellipse cx="300" cy="210" rx="66" ry="83"/></clipPath></defs><g clip-path="url(#${unique})"><image class="fitted-photo" href="${escapeAttr(p.url)}" x="${300-w/2}" y="${210-h/2}" width="${w}" height="${h}" preserveAspectRatio="none" transform="${photoTransform(p)}"/></g>`;
+    slot.innerHTML=`<defs><clipPath id="${unique}"><ellipse cx="300" cy="210" rx="66" ry="83"/></clipPath>
+      <filter class="photo-tone-filter" id="${unique}-tone" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
+        <feComponentTransfer><feFuncR type="gamma" amplitude="1" exponent="1" offset="0" data-tone-channel="r"/><feFuncG type="gamma" amplitude="1" exponent="1" offset="0" data-tone-channel="g"/><feFuncB type="gamma" amplitude="1" exponent="1" offset="0" data-tone-channel="b"/></feComponentTransfer>
+      </filter></defs><g clip-path="url(#${unique})"><image class="fitted-photo" href="${escapeAttr(p.url)}" x="${300-w/2}" y="${210-h/2}" width="${w}" height="${h}" preserveAspectRatio="none" transform="${photoTransform(p)}"/></g>`;
+    applyPhotoTone(slot,p);
   }
   function renderCloset() {
     if(category!=='makeup')hideMakeupPortrait();
@@ -260,7 +278,7 @@
     $('#wardrobeHint').textContent=category==='makeup'?(state.unlocked?'すきな いろで おめかし':'できた！で ひらくよ'):category==='stickers'?'タッチで ぺたん。もういちど タッチで はがせるよ':'すきな えを タッチ';
     const body=$('#closetBody');
     body.classList.toggle('outing-shelf',category==='background'&&!!window.PrincessOuting);
-    body.classList.toggle('hair-shelf',category==='hair');body.classList.toggle('extra-shelf',category==='accessory');
+    body.classList.toggle('hair-shelf',category==='hair');body.classList.toggle('extra-shelf',category==='accessory'||category==='shoes');
     body.classList.toggle('casual-shelf',category==='dress'&&state.mode==='casual');
     if(category==='dress'&&state.mode==='casual'){renderCasual(body);return;}
     if(category==='makeup'){renderMakeup(body);return;}
@@ -269,10 +287,9 @@
     if(category==='accessory'&&state.mode==='casual'){
       body.innerHTML=`<div class="cards casual-accessories">${cardItems('accessory').map(item=>`<button class="choice ${effectiveAccessory()===item.id?'selected':''}" data-casual-accessory="${item.id}" aria-label="${escapeAttr(item.label)}" aria-pressed="${effectiveAccessory()===item.id}"><span class="choice-art ${item.id==='none'?'no-accessory':''}">${item.id==='none'?casualToolIcon('ribbon')+'<b>×</b>':window.PrincessExtras?.card?.('accessory',item.id)||icon('accessory')}</span>${effectiveAccessory()===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`;return;
     }
-    if(category==='accessory'&&window.PrincessExtras){
-      const ex=window.PrincessExtras,items=ex.cards[accessoryShelf],choiceKey=accessoryShelf==='shoes'?'shoes':'accessory';
-      const tabs=['accessory','shoes'].map((s,i)=>`<button class="${accessoryShelf===s?'active':''}" data-extra-shelf="${s}" aria-pressed="${accessoryShelf===s}">${ex.card(s,i?(state.shoes||'ballet'):(state.accessory||'crown'))}<span>${i?'くつ':'かみかざり'}</span></button>`).join('');
-      body.innerHTML=`<div class="extra-switch">${tabs}</div><div class="cards">${items.map(item=>`<button class="choice ${state[choiceKey]===item.id?'selected':''}" data-extra-choice="${item.id}" aria-label="${escapeAttr(item.label)}" aria-pressed="${state[choiceKey]===item.id}"><span class="choice-art">${ex.card(accessoryShelf,item.id)}</span>${state[choiceKey]===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`;return;
+    if((category==='accessory'||category==='shoes')&&window.PrincessExtras){
+      const ex=window.PrincessExtras,items=ex.cards[category];
+      body.innerHTML=`<div class="cards">${items.map(item=>`<button class="choice ${state[category]===item.id?'selected':''}" data-extra-choice="${item.id}" aria-label="${escapeAttr(item.label)}" aria-pressed="${state[category]===item.id}"><span class="choice-art">${ex.card(category,item.id)}</span>${state[category]===item.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`;return;
     }
     if(category==='stickers'){body.innerHTML=`<div class="sticker-cards">${STICKERS.map(s=>`<button class="choice ${selectedSticker===s.id?'selected':''}" data-sticker="${s.id}" aria-label="${s.label}" aria-pressed="${selectedSticker===s.id}"><span class="choice-art">${stickerCard(s.id)}</span>${selectedSticker===s.id?`<span class="choice-check">${icon('check')}</span>`:''}</button>`).join('')}</div>`;return;}
     const items=cardItems(category), perPage=items.length>4?3:4, pages=Math.ceil(items.length/perPage);page=Math.min(page,pages-1);
@@ -603,28 +620,64 @@
     $$('.photo-hair-fit',preview).forEach(layer=>layer.setAttribute('transform',`translate(${h.x} ${h.y}) translate(300 210) scale(${h.scale}) translate(-300 -210)`));
     $$('[data-fit-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.fitMode===fitMode)));
     $('[data-photo-flip]').hidden=fitMode==='hair';
+    $('.fit-adjust').hidden=fitMode==='tone';$('.fit-tone').hidden=fitMode!=='tone';
+    $('.photo-editor-tip').textContent=fitMode==='tone'?'しゃしんの いろを あわせてね':'ゆびで うごかしてね';
+  }
+  function toneIcon(kind) {
+    const drawing={
+      palette:'<path d="M27 6C15 1 4 9 4 20c0 7 5 11 11 10 4-1 4-5 2-7-1-2 0-4 3-4h3c8 0 10-8 4-13z" fill="#fbe5c8" stroke="#946f65" stroke-width="2"/><circle cx="11" cy="12" r="3" fill="#8bbace"/><circle cx="20" cy="9" r="3" fill="#efb758"/><circle cx="27" cy="14" r="2.6" fill="#cc8692"/>',
+      dim:'<path d="M24 23A11 11 0 0 1 13 7a11 11 0 1 0 11 16Z" fill="#8399bb" stroke="#65799b" stroke-width="1.6"/>',
+      sun:'<circle cx="16" cy="16" r="7" fill="#f6c465" stroke="#af803c" stroke-width="1.5"/><path d="M16 2v4m0 20v4M2 16h4m20 0h4M6 6l3 3m14 14 3 3M6 26l3-3M23 9l3-3" stroke="#c89a48" stroke-width="2.2" stroke-linecap="round"/>',
+      cool:'<path d="M16 3C14 8 6 15 6 21a10 10 0 0 0 20 0c0-6-8-13-10-18Z" fill="#a0d1e2" stroke="#638ea8" stroke-width="1.6"/><path d="M11 19q-1 4 3 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>',
+      warm:'<path d="M16 3C14 8 6 15 6 21a10 10 0 0 0 20 0c0-6-8-13-10-18Z" fill="#f1bb83" stroke="#b7815d" stroke-width="1.6"/><path d="M11 19q-1 4 3 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>'
+    };
+    return `<svg viewBox="0 0 32 32" aria-hidden="true">${drawing[kind]}</svg>`;
+  }
+  function toneRow(key,label,left,right,less,more) {
+    return `<div class="photo-tone-row"><label for="tone-${key}">${label}</label><div>
+      <button data-tone-step="-1" data-tone-key="${key}" aria-label="${less}">${toneIcon(left)}</button>
+      <input type="range" min="-4" max="4" step="1" value="0" data-photo-tone="${key}" id="tone-${key}">
+      <button data-tone-step="1" data-tone-key="${key}" aria-label="${more}">${toneIcon(right)}</button>
+    </div></div>`;
+  }
+  function refreshToneControls() {
+    for(const input of $$('[data-photo-tone]')){
+      const key=input.dataset.photoTone,value=photoDraft[key];
+      input.value=String(value);
+      input.setAttribute('aria-valuetext',value===0?'もとの いろ':(key==='brightness'?(value>0?'あかるく':'くらく'):(value>0?'あたたかく':'すずしく'))+' '+Math.abs(value));
+    }
+    for(const b of $$('[data-tone-step]'))b.disabled=Math.abs(photoDraft[b.dataset.toneKey]+Number(b.dataset.toneStep))>4;
+    $('[data-tone-reset]').disabled=photoDraft.brightness===0&&photoDraft.warmth===0;
+    applyPhotoTone($('#face-photo-slot',$('#photoPreview')),photoDraft);
   }
   function openPhotoEditor(candidate=photo) {
     if(!candidate)return;
-    const draft={...candidate,hairFit:{x:0,y:0,scale:1,...candidate.hairFit}};fitMode='face';
+    const draft={brightness:0,warmth:0,...candidate,hairFit:{x:0,y:0,scale:1,...candidate.hairFit}};fitMode='face';
     const padButton=(move,label,direction)=>`<button class="fit-key dir-${direction}" data-fit-move="${move}" aria-label="${label}">${icon('chevron-right')}</button>`;
     speak('photoAdjust');openModal(`${closeMarkup()}<h2>ぴったり あわせよう</h2><div class="fit-layout"><div class="photo-editor-preview" id="photoPreview"></div><div class="fit-controls">
-      <div class="fit-modes"><button data-fit-mode="face" aria-label="おかおを うごかす" aria-pressed="true"><img src="${escapeAttr(draft.url)}" alt=""><span>おかお</span></button><button data-fit-mode="hair" aria-label="かみを うごかす" aria-pressed="false">${categoryVisual('hair')}<span>かみ</span></button></div>
+      <div class="fit-modes"><button data-fit-mode="face" aria-label="おかおを うごかす" aria-pressed="true"><img src="${escapeAttr(draft.url)}" alt=""><span>おかお</span></button><button data-fit-mode="hair" aria-label="かみを うごかす" aria-pressed="false">${categoryVisual('hair')}<span>かみ</span></button><button data-fit-mode="tone" aria-label="おかおの いろを あわせる" aria-pressed="false">${toneIcon('palette')}<span>いろ</span></button></div>
       <p class="photo-editor-tip">ゆびで うごかしてね</p><div class="fit-adjust">
       <div class="fit-pad">${padButton('0,-2','すこし うえ','up')}${padButton('-2,0','すこし ひだり','left')}<button class="fit-key fit-reset" data-fit-reset aria-label="えらんだ ところを もとに もどす">${icon('undo')}</button>${padButton('2,0','すこし みぎ','right')}${padButton('0,2','すこし した','down')}</div>
-      <div class="fit-tools"><button class="fit-key" data-fit-zoom="1" aria-label="おおきく">${icon('zoom-in')}</button><button class="fit-key" data-fit-zoom="-1" aria-label="ちいさく">${icon('zoom-out')}</button><button class="fit-key" data-photo-flip aria-label="かがみに うつす">${icon('mirror')}</button></div></div></div></div>
+      <div class="fit-tools"><button class="fit-key" data-fit-zoom="1" aria-label="おおきく">${icon('zoom-in')}</button><button class="fit-key" data-fit-zoom="-1" aria-label="ちいさく">${icon('zoom-out')}</button><button class="fit-key" data-photo-flip aria-label="かがみに うつす">${icon('mirror')}</button></div></div>
+      <div class="fit-tone" hidden>${toneRow('brightness','あかるさ','dim','sun','すこし くらく','すこし あかるく')}${toneRow('warmth','いろあい','cool','warm','すこし すずしい いろ','すこし あたたかい いろ')}
+        <button data-tone-reset>${icon('undo')}<span>もとの いろ</span></button>
+      </div></div></div>
       <div class="modal-actions"><button class="action-button" data-photo-done>${icon('check')}<span>これに する</span></button></div>`,'photo-editor');
     photoDraft=draft;modalCleanup=()=>{photoDraft=null;};
     const preview=$('#photoPreview');
     preview.innerHTML=art().render({...state,photoUrl:draft.url,hairFit:draft.hairFit,transparentBackground:true});
     const svg=$('svg',preview);svg.setAttribute('viewBox','135 58 330 350');svg.setAttribute('width','330');svg.setAttribute('height','350');
-    injectPhoto(preview,draft);refreshPhotoDraft();
+    injectPhoto(preview,draft);refreshPhotoDraft();refreshToneControls();
+    $('.fit-tone').addEventListener('input',e=>{
+      if(!e.target.matches('[data-photo-tone]'))return;
+      photoDraft[e.target.dataset.photoTone]=e.target.valueAsNumber;refreshToneControls();
+    });
     const pointers=new Map();let gesture;
     function localPoint(event){const p=svg.createSVGPoint();p.x=event.clientX;p.y=event.clientY;return p.matrixTransform($('.head-front',svg).getScreenCTM().inverse());}
     function geometry(){const [a,b]=[...pointers.values()];if(!a)return null;return {x:b?(a.x+b.x)/2:a.x,y:b?(a.y+b.y)/2:a.y,d:b?Math.hypot(a.x-b.x,a.y-b.y):0};}
     function anchor(){const g=geometry(),t=fitTarget();gesture=g?{...g,tx:t.x,ty:t.y,scale:t.scale}:null;}
-    preview.addEventListener('pointerdown',e=>{e.preventDefault();if(pointers.size>1)return;preview.setPointerCapture(e.pointerId);pointers.set(e.pointerId,localPoint(e));anchor();});
-    preview.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId)||!gesture)return;e.preventDefault();pointers.set(e.pointerId,localPoint(e));const g=geometry();
+    preview.addEventListener('pointerdown',e=>{if(fitMode==='tone')return;e.preventDefault();if(pointers.size>1)return;preview.setPointerCapture(e.pointerId);pointers.set(e.pointerId,localPoint(e));anchor();});
+    preview.addEventListener('pointermove',e=>{if(fitMode==='tone'||!pointers.has(e.pointerId)||!gesture)return;e.preventDefault();pointers.set(e.pointerId,localPoint(e));const g=geometry();
       if(g.d&&gesture.d>2)fitScale(gesture.scale*g.d/gesture.d);
       fitTranslate(gesture.tx+(g.x-gesture.x),gesture.ty+(g.y-gesture.y));
     });
@@ -672,7 +725,7 @@
   function beginParentHold(e) { if(e.button>0)return;clearParentHold();holdIndicator=document.createElement('span');holdIndicator.className='parent-hold-progress';const r=$('#parents').getBoundingClientRect();holdIndicator.style.cssText=`left:${r.left-3}px;top:${r.top-3}px`;document.body.append(holdIndicator);holdTimer=setTimeout(()=>{clearParentHold();openParents();},1200); }
   function clearParentHold(){clearTimeout(holdTimer);holdIndicator?.remove();holdIndicator=null;}
 
-  function beginPlay(mode){started=true;window.PrincessMusic?.start();ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{window.PrincessMusic?.setSleeping(true);stopCamera();stopVoice();},onWake:()=>window.PrincessMusic?.setSleeping(false)});}
+  function beginPlay(mode){started=true;ensureAudio();$('#startScreen').classList.add('hidden');if(state.mode!==mode)setPlayMode(mode);else{renderDoll();renderCloset();renderHeader();speak(mode==='casual'?'casualMode':'welcome');effect();}window.PrincessMusic?.start();window.PrincessIdle?.start({isSoundEnabled:()=>state.sound,onWarning:()=>speak('sleepy','眠くなってきちゃった'),onCancelWarning:()=>stopVoice(),onSleep:()=>{window.PrincessMusic?.setSleeping(true);stopCamera();stopVoice();},onWake:()=>window.PrincessMusic?.setSleeping(false)});}
   $('#start').addEventListener('click',()=>beginPlay('princess'));
   $('#startCasual')?.addEventListener('click',()=>beginPlay('casual'));
   $('#undo').addEventListener('click',()=>{if(!history.length)return;const preferences={unlocked:state.unlocked,sound:state.sound,bgm:state.bgm,faceStudioEnabled:state.faceStudioEnabled},past=history.pop();window.PrincessFriendBook?.rememberLook(state.friendId,state);state={...past.design,...preferences};photo=past.photo?{...past.photo}:null;if(!state.faceStudioEnabled&&state.friendId!=='cast-gentle')swapFriend(window.PrincessFriendBook?.get('cast-gentle'),{keepPhoto:true});persist();renderDoll();renderCloset();renderHeader();effect();});
@@ -691,8 +744,7 @@
     const casualAccessory=e.target.closest('[data-casual-accessory]');if(casualAccessory){change(()=>state.casual.accessory=casualAccessory.dataset.casualAccessory);speakNamedChoice('accessory',casualAccessory.dataset.casualAccessory);return;}
     if(e.target.closest('[data-open-dress-palette]')){openColourPalette('dress');return;}
     if(e.target.closest('[data-first-done]')){openCompletion();return;}
-    const shelf=e.target.closest('[data-extra-shelf]');if(shelf){accessoryShelf=shelf.dataset.extraShelf;renderCloset();effect();speak(accessoryShelf==='shoes'?'shoes':'hairAccessory',accessoryShelf==='shoes'?'くつを えらんでね':'かみかざりを えらんでね');return;}
-    const extra=e.target.closest('[data-extra-choice]');if(extra){change(()=>state[accessoryShelf]=extra.dataset.extraChoice);speakNamedChoice(accessoryShelf==='shoes'?'shoes':'accessory',extra.dataset.extraChoice);return;}
+    const extra=e.target.closest('[data-extra-choice]');if(extra){change(()=>state[category]=extra.dataset.extraChoice);speakNamedChoice(category,extra.dataset.extraChoice);return;}
     const choice=e.target.closest('[data-choice]');if(choice){change(()=>{if(category==='background'&&state.mode==='casual')state.casual.background=choice.dataset.choice;else state[category]=choice.dataset.choice;if(category==='dress'){const item=cardItems('dress').find(x=>x.id===state.dress);state.dressColor=representativeColor(item);}});if(category==='hair'){hairRemembered.set(currentHairFamily().id,state.hair);speakHairChoice(state.hair);}if(category==='background')speakNamedChoice('background',choice.dataset.choice);if(category==='dress'){const guide=assets().dressGuide?.[state.dress];speak(guide?.voiceKey||'dress',guide?.label);}return;}
     const p=e.target.closest('[data-page]');if(p){page+=Number(p.dataset.page);renderCloset();effect();return;}
     const sticker=e.target.closest('[data-sticker]');if(sticker){selectedSticker=sticker.dataset.sticker;renderCloset();effect();speakNamedChoice('sticker',sticker.dataset.sticker);return;}
@@ -743,6 +795,11 @@
     if(t.closest('[data-adjust-photo]')){openPhotoEditor();return;}
     if(t.closest('[data-remove-photo]')){record();photo=null;renderDoll();renderHeader();closeModal();effect();return;}
     if(t.closest('[data-photo-done]')){if(photoDraft){record();photo={...photoDraft};}closeModal();renderDoll();renderHeader();sparkle();effect();return;}
+    const tone=t.closest('[data-tone-step]');if(tone&&photoDraft){
+      const key=tone.dataset.toneKey;photoDraft[key]=clamp(photoDraft[key]+Number(tone.dataset.toneStep),-4,4);
+      refreshToneControls();effect();return;
+    }
+    if(t.closest('[data-tone-reset]')&&photoDraft){photoDraft.brightness=0;photoDraft.warmth=0;refreshToneControls();effect();return;}
     const fit=t.closest('[data-fit-mode]');if(fit&&photoDraft){fitMode=fit.dataset.fitMode;refreshPhotoDraft();effect();return;}
     const move=t.closest('[data-fit-move]');if(move&&photoDraft){const [dx,dy]=move.dataset.fitMove.split(',').map(Number),layer=fitTarget();fitTranslate(layer.x+dx,layer.y+dy);effect();return;}
     const zoom=t.closest('[data-fit-zoom]');if(zoom&&photoDraft){fitScale(fitTarget().scale*Math.pow(fitMode==='hair'?1.025:1.07,Number(zoom.dataset.fitZoom)));effect();return;}
@@ -766,7 +823,16 @@
   let resizeFrame;window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{renderDoll();if(category==='background'&&window.PrincessOuting)renderOutings($('#closetBody'));if($('#modal').classList.contains('outing-modal'))fitOutingMap($('#modal'));});});
   const hairOrientation=window.matchMedia('(orientation:portrait)'),refreshHairOrientation=()=>{if(category==='hair'){page=selectedPage('hair');renderCloset();}};
   if(hairOrientation.addEventListener)hairOrientation.addEventListener('change',refreshHairOrientation);else hairOrientation.addListener(refreshHairOrientation);
-  window.PrincessMusic?.configure({source:()=>assets().music?.atelier||'',enabled:()=>state.bgm!==false,sound:()=>state.sound});
+  window.PrincessMusic?.configure({
+    track:()=>{
+      const region=window.PrincessOuting?.regionFor(effectiveBackground());
+      if(region==='amusement')return 'park';
+      if(region==='aquarium')return 'aquarium';
+      return 'atelier';
+    },
+    source:track=>assets().music?.[track]||assets().music?.atelier||'',
+    enabled:()=>state.bgm!==false,sound:()=>state.sound
+  });
   validateDesign();page=selectedPage(category);renderHeader();renderDoll();renderCloset();
   // A tiny inspection surface is useful for offline smoke tests, with no photo contents exposed.
   window.PrincessAtelier={getDesign:()=>clone(state),getPhotoStatus:()=>({present:!!photo,scale:photo?.scale||1,flip:photo?.flip||false}),getCategory:()=>category};
